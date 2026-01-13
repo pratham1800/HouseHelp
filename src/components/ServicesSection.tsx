@@ -101,9 +101,9 @@ export const ServicesSection = () => {
               {/* Background gradient on hover */}
               <div className={`absolute inset-0 bg-gradient-to-br ${service.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
               
-              {/* Icon */}
-              <div className={`w-20 h-20 ${service.bgColor} rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300`}>
-                <img src={service.icon} alt={service.title} className="w-12 h-12 object-contain" />
+              {/* Service Illustration */}
+              <div className={`w-full h-40 ${service.bgColor} rounded-2xl flex items-center justify-center mb-5 overflow-hidden group-hover:scale-[1.02] transition-transform duration-300`}>
+                <img src={service.icon} alt={service.title} className="w-full h-full object-cover rounded-2xl" />
               </div>
 
               {/* Content */}

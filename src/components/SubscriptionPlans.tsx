@@ -1,11 +1,15 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Check, Star, Shield, RefreshCw } from 'lucide-react';
+import { Check, Star, Shield, RefreshCw, Loader2, Crown, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useSubscription } from '@/hooks/useSubscription';
+import { useAuth } from '@/hooks/useAuth';
+import { AuthModal } from './AuthModal';
 
 const plans = [
   {
     name: 'Standard',
-    price: '499',
+    price: 499,
     description: 'Perfect for getting started',
     features: [
       'Verified worker matching',
@@ -23,7 +27,7 @@ const plans = [
   },
   {
     name: 'Premium',
-    price: '999',
+    price: 999,
     description: 'Best value for families',
     features: [
       'Everything in Standard',
@@ -40,9 +44,80 @@ const plans = [
 ];
 
 export const SubscriptionPlans = () => {
+  const { user } = useAuth();
+  const { subscription, subscribing, subscribe } = useSubscription();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [pendingPlan, setPendingPlan] = useState<{ name: string; price: number } | null>(null);
+
+  const handleSubscribe = async (planName: string, planPrice: number) => {
+    if (!user) {
+      setPendingPlan({ name: planName, price: planPrice });
+      setShowAuthModal(true);
+      return;
+    }
+
+    await subscribe(planName, planPrice);
+  };
+
+  const handleAuthSuccess = async () => {
+    setShowAuthModal(false);
+    if (pendingPlan) {
+      // Wait a moment for auth state to settle
+      setTimeout(() => {
+        subscribe(pendingPlan.name, pendingPlan.price);
+        setPendingPlan(null);
+      }, 500);
+    }
+  };
+
+  const isCurrentPlan = (planName: string) => {
+    return subscription?.plan_name === planName && subscription?.status === 'active';
+  };
+
   return (
     <section id="subscription" className="section-padding bg-background">
       <div className="container-main">
+        {/* Demo Mode Banner */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border border-amber-500/20 rounded-2xl p-4 mb-8 text-center"
+        >
+          <div className="flex items-center justify-center gap-2 text-amber-600">
+            <Sparkles className="w-5 h-5" />
+            <span className="font-medium">Demo Mode</span>
+            <Sparkles className="w-5 h-5" />
+          </div>
+          <p className="text-sm text-muted-foreground mt-1">
+            Test subscriptions freely - no real payments will be processed
+          </p>
+        </motion.div>
+
+        {/* Current Subscription Status */}
+        {subscription && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 border border-primary/20 rounded-2xl p-6 mb-8"
+          >
+            <div className="flex items-center justify-center gap-3">
+              <Crown className="w-6 h-6 text-primary" />
+              <div className="text-center">
+                <p className="font-semibold text-foreground">
+                  You're subscribed to <span className="text-primary">{subscription.plan_name}</span>
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Trial ends: {new Date(subscription.trial_ends_at || '').toLocaleDateString('en-IN', { 
+                    day: 'numeric', 
+                    month: 'long', 
+                    year: 'numeric' 
+                  })}
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -74,10 +149,20 @@ export const SubscriptionPlans = () => {
                 plan.popular
                   ? 'bg-gradient-to-br from-primary/5 via-card to-secondary/5 border-2 border-primary/20 shadow-elevated'
                   : 'bg-card shadow-card'
-              }`}
+              } ${isCurrentPlan(plan.name) ? 'ring-2 ring-primary ring-offset-2' : ''}`}
             >
+              {/* Current Plan Badge */}
+              {isCurrentPlan(plan.name) && (
+                <div className="absolute -top-3 -right-3">
+                  <div className="flex items-center gap-1 bg-primary px-3 py-1 rounded-full">
+                    <Check className="w-3 h-3 text-primary-foreground" />
+                    <span className="text-xs font-semibold text-primary-foreground">Current</span>
+                  </div>
+                </div>
+              )}
+
               {/* Popular Badge */}
-              {plan.popular && (
+              {plan.popular && !isCurrentPlan(plan.name) && (
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2">
                   <div className="flex items-center gap-1.5 bg-gradient-to-r from-primary to-accent px-4 py-1.5 rounded-full">
                     <Star className="w-4 h-4 text-white fill-white" />
@@ -118,8 +203,28 @@ export const SubscriptionPlans = () => {
               </div>
 
               {/* CTA */}
-              <Button variant={plan.buttonVariant} size="lg" className="w-full">
-                {plan.popular ? 'Get Premium' : 'Get Started'}
+              <Button 
+                variant={plan.buttonVariant} 
+                size="lg" 
+                className="w-full"
+                disabled={subscribing || isCurrentPlan(plan.name)}
+                onClick={() => handleSubscribe(plan.name, plan.price)}
+              >
+                {subscribing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : isCurrentPlan(plan.name) ? (
+                  <>
+                    <Check className="w-4 h-4 mr-2" />
+                    Current Plan
+                  </>
+                ) : subscription ? (
+                  `Switch to ${plan.name}`
+                ) : (
+                  plan.popular ? 'Get Premium' : 'Get Started'
+                )}
               </Button>
 
               {/* Premium Extras */}
@@ -150,6 +255,15 @@ export const SubscriptionPlans = () => {
           * One-time matching fee applies. Worker salary is paid directly to the worker.
         </motion.p>
       </div>
+
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={() => {
+          setShowAuthModal(false);
+          setPendingPlan(null);
+        }}
+        defaultMode="signup"
+      />
     </section>
   );
 };

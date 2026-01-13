@@ -42,7 +42,7 @@ const ServiceSelector = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6"
           >
             {servicesData.map((service, index) => (
               <motion.div
@@ -52,33 +52,40 @@ const ServiceSelector = () => {
                 transition={{ delay: 0.1 * index }}
                 whileHover={{ y: -8 }}
                 onClick={() => navigate(`/services/${service.id}`)}
-                className="group relative bg-card rounded-3xl p-6 shadow-soft hover:shadow-elevated transition-all duration-300 cursor-pointer overflow-hidden"
+                className="group relative bg-card rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-soft hover:shadow-elevated transition-all duration-300 cursor-pointer overflow-hidden"
               >
                 {/* Background gradient on hover */}
                 <div className={`absolute inset-0 bg-gradient-to-br ${service.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
                 
-                {/* Icon */}
-                <div className={`w-20 h-20 ${service.bgColor} rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300`}>
-                  <img src={service.icon} alt={service.title} className="w-12 h-12 object-contain" />
+                {/* Mobile: Horizontal layout, Desktop: Vertical layout */}
+                <div className="flex items-start gap-4 sm:block">
+                  {/* Icon - Larger on mobile for visibility */}
+                  <div className={`w-16 h-16 sm:w-20 sm:h-20 ${service.bgColor} rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0 sm:mb-5 group-hover:scale-110 transition-transform duration-300`}>
+                    <img src={service.icon} alt={service.title} className="w-10 h-10 sm:w-12 sm:h-12 object-contain" />
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg sm:text-xl font-semibold text-foreground mb-1 sm:mb-2 group-hover:text-primary transition-colors">
+                      {service.title}
+                    </h3>
+                    <p className="text-muted-foreground text-sm mb-2 sm:mb-4 leading-relaxed line-clamp-2">
+                      {service.description}
+                    </p>
+
+                    {/* Sub-services count */}
+                    <div className="text-sm text-primary font-medium">
+                      {service.subServices.length} options available
+                    </div>
+                  </div>
                 </div>
 
-                {/* Content */}
-                <h3 className="text-xl font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">
-                  {service.title}
-                </h3>
-                <p className="text-muted-foreground text-sm mb-4 leading-relaxed">
-                  {service.description}
-                </p>
-
-                {/* Sub-services count */}
-                <div className="text-sm text-primary font-medium mb-4">
-                  {service.subServices.length} options available
-                </div>
-
-                {/* CTA */}
-                <div className="flex items-center gap-2 text-primary font-medium text-sm group-hover:gap-3 transition-all">
-                  View Services
-                  <ArrowRight className="w-4 h-4" />
+                {/* CTA - Full width on mobile */}
+                <div className="flex items-center justify-between mt-4 pt-4 border-t border-border sm:border-0 sm:pt-0 sm:mt-4">
+                  <div className="flex items-center gap-2 text-primary font-medium text-sm group-hover:gap-3 transition-all">
+                    View Services
+                    <ArrowRight className="w-4 h-4" />
+                  </div>
                 </div>
               </motion.div>
             ))}

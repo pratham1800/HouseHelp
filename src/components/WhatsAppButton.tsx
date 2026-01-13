@@ -1,7 +1,11 @@
 import { motion } from 'framer-motion';
 import { MessageCircle } from 'lucide-react';
 
-export const WhatsAppButton = () => {
+interface WhatsAppButtonProps {
+  offsetBottom?: boolean;
+}
+
+export const WhatsAppButton = ({ offsetBottom = false }: WhatsAppButtonProps) => {
   const phoneNumber = '919876543210'; // Replace with actual number
   const message = encodeURIComponent('Hi! I want to know more about GharSeva home help services.');
 
@@ -11,7 +15,7 @@ export const WhatsAppButton = () => {
       target="_blank"
       rel="noopener noreferrer"
       initial={{ scale: 0, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
+      animate={{ scale: 1, opacity: 1, y: offsetBottom ? -80 : 0 }}
       transition={{ delay: 1, type: 'spring', stiffness: 200 }}
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.95 }}

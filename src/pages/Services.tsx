@@ -263,7 +263,7 @@ const ServiceDetailPage = ({ service }: { service: Service }) => {
         />
       </main>
       <Footer />
-      <WhatsAppButton />
+      <WhatsAppButton offsetBottom={selectedSubServices.length > 0} />
     </div>
   );
 };

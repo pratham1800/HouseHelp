@@ -7,6 +7,11 @@ import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Services from "./pages/Services";
 import Dashboard from "./pages/Dashboard";
+import WorkerLanding from "./pages/WorkerLanding";
+import WorkerBenefits from "./pages/WorkerBenefits";
+import WorkerRegistration from "./pages/WorkerRegistration";
+import WorkerDashboard from "./pages/WorkerDashboard";
+import WorkerVerification from "./pages/WorkerVerification";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +28,11 @@ const App = () => (
             <Route path="/services" element={<Services />} />
             <Route path="/services/:serviceId" element={<Services />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/for-workers" element={<WorkerLanding />} />
+            <Route path="/for-workers/benefits" element={<WorkerBenefits />} />
+            <Route path="/for-workers/register" element={<WorkerRegistration />} />
+            <Route path="/for-workers/dashboard" element={<WorkerDashboard />} />
+            <Route path="/for-workers/verification" element={<WorkerVerification />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

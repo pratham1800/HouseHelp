@@ -137,6 +137,119 @@ export type Database = {
         }
         Relationships: []
       }
+      worker_auth: {
+        Row: {
+          created_at: string
+          id: string
+          user_id: string
+          worker_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          user_id: string
+          worker_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          user_id?: string
+          worker_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "worker_auth_worker_id_fkey"
+            columns: ["worker_id"]
+            isOneToOne: true
+            referencedRelation: "workers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workers: {
+        Row: {
+          age: number | null
+          assigned_customer_id: string | null
+          created_at: string
+          gender: string | null
+          has_whatsapp: boolean | null
+          id: string
+          id_proof_url: string | null
+          languages_spoken: string[] | null
+          match_score: number | null
+          name: string
+          notes: string | null
+          phone: string
+          preferred_areas: string[] | null
+          residential_address: string | null
+          scheduled_call_date: string | null
+          status: string | null
+          trial_end_date: string | null
+          trial_start_date: string | null
+          updated_at: string
+          verification_notes: string | null
+          verified_at: string | null
+          verified_by: string | null
+          work_type: string
+          working_hours: string | null
+          years_experience: number | null
+        }
+        Insert: {
+          age?: number | null
+          assigned_customer_id?: string | null
+          created_at?: string
+          gender?: string | null
+          has_whatsapp?: boolean | null
+          id?: string
+          id_proof_url?: string | null
+          languages_spoken?: string[] | null
+          match_score?: number | null
+          name: string
+          notes?: string | null
+          phone: string
+          preferred_areas?: string[] | null
+          residential_address?: string | null
+          scheduled_call_date?: string | null
+          status?: string | null
+          trial_end_date?: string | null
+          trial_start_date?: string | null
+          updated_at?: string
+          verification_notes?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+          work_type: string
+          working_hours?: string | null
+          years_experience?: number | null
+        }
+        Update: {
+          age?: number | null
+          assigned_customer_id?: string | null
+          created_at?: string
+          gender?: string | null
+          has_whatsapp?: boolean | null
+          id?: string
+          id_proof_url?: string | null
+          languages_spoken?: string[] | null
+          match_score?: number | null
+          name?: string
+          notes?: string | null
+          phone?: string
+          preferred_areas?: string[] | null
+          residential_address?: string | null
+          scheduled_call_date?: string | null
+          status?: string | null
+          trial_end_date?: string | null
+          trial_start_date?: string | null
+          updated_at?: string
+          verification_notes?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+          work_type?: string
+          working_hours?: string | null
+          years_experience?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -17,6 +17,7 @@ const navLinks = [
   { label: 'Services', href: '#services' },
   { label: 'How It Works', href: '#how-it-works' },
   { label: 'Subscription', href: '#subscription' },
+  { label: 'For Workers', href: '/for-workers' },
   { label: 'About Us', href: '#about' },
 ];
 

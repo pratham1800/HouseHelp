@@ -59,9 +59,9 @@ const ServiceSelector = () => {
                 
                 {/* Mobile: Horizontal layout, Desktop: Vertical layout */}
                 <div className="flex items-start gap-4 sm:block">
-                  {/* Icon - Larger on mobile for visibility */}
-                  <div className={`w-16 h-16 sm:w-20 sm:h-20 ${service.bgColor} rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0 sm:mb-5 group-hover:scale-110 transition-transform duration-300`}>
-                    <img src={service.icon} alt={service.title} className="w-10 h-10 sm:w-12 sm:h-12 object-contain" />
+                  {/* Icon - Large and prominent */}
+                  <div className={`w-20 h-20 sm:w-24 sm:h-24 lg:w-28 lg:h-28 ${service.bgColor} rounded-2xl sm:rounded-3xl flex items-center justify-center flex-shrink-0 sm:mb-5 group-hover:scale-110 transition-transform duration-300`}>
+                    <img src={service.icon} alt={service.title} className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 object-contain" />
                   </div>
 
                   {/* Content */}
@@ -143,8 +143,8 @@ const ServiceDetailPage = ({ service }: { service: Service }) => {
               animate={{ opacity: 1, y: 0 }}
               className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6"
             >
-              <div className={`w-16 h-16 sm:w-24 sm:h-24 ${service.bgColor} rounded-2xl sm:rounded-3xl flex items-center justify-center shadow-soft flex-shrink-0`}>
-                <img src={service.icon} alt={service.title} className="w-10 h-10 sm:w-14 sm:h-14 object-contain" />
+              <div className={`w-20 h-20 sm:w-28 sm:h-28 lg:w-32 lg:h-32 ${service.bgColor} rounded-2xl sm:rounded-3xl flex items-center justify-center shadow-soft flex-shrink-0`}>
+                <img src={service.icon} alt={service.title} className="w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20 object-contain" />
               </div>
               <div>
                 <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-1 sm:mb-2">

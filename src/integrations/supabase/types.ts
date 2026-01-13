@@ -98,6 +98,45 @@ export type Database = {
         }
         Relationships: []
       }
+      subscriptions: {
+        Row: {
+          created_at: string
+          current_period_end: string
+          current_period_start: string
+          id: string
+          plan_name: string
+          plan_price: number
+          status: string
+          trial_ends_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_period_end?: string
+          current_period_start?: string
+          id?: string
+          plan_name: string
+          plan_price: number
+          status?: string
+          trial_ends_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_period_end?: string
+          current_period_start?: string
+          id?: string
+          plan_name?: string
+          plan_price?: number
+          status?: string
+          trial_ends_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

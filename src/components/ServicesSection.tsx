@@ -101,9 +101,75 @@ export const ServicesSection = () => {
               {/* Background gradient on hover */}
               <div className={`absolute inset-0 bg-gradient-to-br ${service.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
               
-              {/* Icon */}
-              <div className={`w-20 h-20 ${service.bgColor} rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300`}>
-                <img src={service.icon} alt={service.title} className="w-12 h-12 object-contain" />
+              {/* Animated Icon Container */}
+              <div className="relative mb-5">
+                {/* Glow effect behind icon */}
+                <motion.div
+                  className={`absolute inset-0 bg-gradient-to-br ${service.color} rounded-2xl blur-xl opacity-0 group-hover:opacity-40`}
+                  animate={{
+                    scale: [1, 1.2, 1],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                />
+                
+                {/* Floating ring animation */}
+                <motion.div
+                  className={`absolute inset-0 rounded-2xl border-2 border-dashed opacity-20`}
+                  style={{ borderColor: `hsl(var(--primary))` }}
+                  animate={{
+                    rotate: 360,
+                    scale: [1, 1.1, 1],
+                  }}
+                  transition={{
+                    rotate: { duration: 20, repeat: Infinity, ease: "linear" },
+                    scale: { duration: 3, repeat: Infinity, ease: "easeInOut" },
+                  }}
+                />
+                
+                {/* Icon container with bounce animation */}
+                <motion.div
+                  className={`relative w-20 h-20 ${service.bgColor} rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-300 overflow-hidden`}
+                  whileHover={{ 
+                    scale: 1.15,
+                    rotate: [0, -5, 5, 0],
+                  }}
+                  animate={{
+                    y: [0, -4, 0],
+                  }}
+                  transition={{
+                    y: { duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: Math.random() * 2 },
+                    rotate: { duration: 0.5 },
+                  }}
+                >
+                  {/* Shimmer effect */}
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12"
+                    animate={{
+                      x: ['-200%', '200%'],
+                    }}
+                    transition={{
+                      duration: 3,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                      repeatDelay: 2,
+                    }}
+                  />
+                  
+                  {/* Icon with subtle pulse */}
+                  <motion.img 
+                    src={service.icon} 
+                    alt={service.title} 
+                    className="w-12 h-12 object-contain relative z-10 drop-shadow-md"
+                    whileHover={{
+                      scale: 1.1,
+                      filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.2))",
+                    }}
+                  />
+                </motion.div>
               </div>
 
               {/* Content */}

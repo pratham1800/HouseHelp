@@ -14,7 +14,11 @@ import {
   User,
   LogOut,
   Settings,
-  Plus
+  Plus,
+  Crown,
+  Sparkles,
+  ArrowUpRight,
+  XCircle
 } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
@@ -22,6 +26,7 @@ import { WhatsAppButton } from '@/components/WhatsAppButton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
+import { useSubscription } from '@/hooks/useSubscription';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { servicesData } from '@/data/servicesData';
@@ -92,9 +97,11 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading, signOut } = useAuth();
   const { toast } = useToast();
+  const { subscription, loading: subLoading, subscribing, subscribe, cancelSubscription } = useSubscription();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -226,6 +233,164 @@ const Dashboard = () => {
                 <div className="text-xs sm:text-sm text-muted-foreground">{stat.label}</div>
               </div>
             ))}
+          </motion.div>
+
+          {/* Subscription Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="mb-6 sm:mb-8"
+          >
+            <h2 className="text-xl font-semibold text-foreground mb-4">Your Subscription</h2>
+            
+            {subLoading ? (
+              <div className="bg-card rounded-2xl p-6 shadow-soft flex items-center justify-center">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              </div>
+            ) : subscription ? (
+              <div className="bg-gradient-to-br from-primary/5 via-card to-secondary/5 border border-primary/20 rounded-2xl p-5 sm:p-6 shadow-soft">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Crown className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-lg font-semibold text-foreground">{subscription.plan_name} Plan</h3>
+                        <Badge className="bg-success/10 text-success border-success/20">Active</Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        ₹{subscription.plan_price}/month
+                      </p>
+                      {subscription.trial_ends_at && (
+                        <p className="text-sm text-primary mt-1 flex items-center gap-1">
+                          <Sparkles className="w-3 h-3" />
+                          Trial ends {new Date(subscription.trial_ends_at).toLocaleDateString('en-IN', { 
+                            day: 'numeric', 
+                            month: 'short', 
+                            year: 'numeric' 
+                          })}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    {subscription.plan_name === 'Standard' && (
+                      <Button 
+                        variant="hero" 
+                        size="sm" 
+                        className="gap-2"
+                        disabled={subscribing}
+                        onClick={() => subscribe('Premium', 999)}
+                      >
+                        {subscribing ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <>
+                            <ArrowUpRight className="w-4 h-4" />
+                            Upgrade to Premium
+                          </>
+                        )}
+                      </Button>
+                    )}
+                    {subscription.plan_name === 'Premium' && (
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="gap-2"
+                        disabled={subscribing}
+                        onClick={() => subscribe('Standard', 499)}
+                      >
+                        {subscribing ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          'Switch to Standard'
+                        )}
+                      </Button>
+                    )}
+                    
+                    {showCancelConfirm ? (
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="destructive" 
+                          size="sm"
+                          onClick={async () => {
+                            await cancelSubscription();
+                            setShowCancelConfirm(false);
+                          }}
+                        >
+                          Confirm Cancel
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => setShowCancelConfirm(false)}
+                        >
+                          Keep
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => setShowCancelConfirm(true)}
+                      >
+                        <XCircle className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Plan Features Preview */}
+                <div className="mt-4 pt-4 border-t border-border/50">
+                  <div className="flex flex-wrap gap-3 text-sm">
+                    {subscription.plan_name === 'Premium' ? (
+                      <>
+                        <span className="flex items-center gap-1.5 text-muted-foreground">
+                          <CheckCircle className="w-3.5 h-3.5 text-success" /> Backup worker on leave
+                        </span>
+                        <span className="flex items-center gap-1.5 text-muted-foreground">
+                          <CheckCircle className="w-3.5 h-3.5 text-success" /> Priority matching
+                        </span>
+                        <span className="flex items-center gap-1.5 text-muted-foreground">
+                          <CheckCircle className="w-3.5 h-3.5 text-success" /> 24/7 support
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="flex items-center gap-1.5 text-muted-foreground">
+                          <CheckCircle className="w-3.5 h-3.5 text-success" /> Verified matching
+                        </span>
+                        <span className="flex items-center gap-1.5 text-muted-foreground">
+                          <CheckCircle className="w-3.5 h-3.5 text-success" /> Basic support
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-card rounded-2xl p-6 shadow-soft">
+                <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+                  <div className="w-14 h-14 bg-muted rounded-xl flex items-center justify-center">
+                    <Crown className="w-7 h-7 text-muted-foreground" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-foreground">No Active Subscription</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Subscribe to a plan to get matched with verified workers
+                    </p>
+                  </div>
+                  <Button onClick={() => navigate('/#subscription')} className="gap-2">
+                    <Sparkles className="w-4 h-4" />
+                    View Plans
+                  </Button>
+                </div>
+              </div>
+            )}
           </motion.div>
 
           {/* Bookings List */}

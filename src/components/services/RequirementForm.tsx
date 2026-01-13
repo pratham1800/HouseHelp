@@ -10,6 +10,7 @@ import { SubService, Service } from '@/data/servicesData';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { WorkerMatchModal } from './WorkerMatchModal';
 
 interface RequirementFormProps {
   isOpen: boolean;
@@ -34,6 +35,19 @@ const timeSlots = [
   { id: 'flexible', label: 'Flexible', time: 'Any time' },
 ];
 
+interface MatchedWorker {
+  id: string;
+  name: string;
+  phone: string;
+  work_type: string;
+  years_experience: number | null;
+  languages_spoken: string[] | null;
+  preferred_areas: string[] | null;
+  working_hours: string | null;
+  gender: string | null;
+  match_score: number;
+}
+
 export const RequirementForm = ({
   isOpen,
   onClose,
@@ -45,6 +59,10 @@ export const RequirementForm = ({
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showMatchModal, setShowMatchModal] = useState(false);
+  const [matchedWorkers, setMatchedWorkers] = useState<MatchedWorker[]>([]);
+  const [isMatchingWorkers, setIsMatchingWorkers] = useState(false);
+  const [currentBookingId, setCurrentBookingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     houseSize: '',
     preferredTime: '',
@@ -73,7 +91,7 @@ export const RequirementForm = ({
     setIsSubmitting(true);
     
     try {
-      const { error } = await supabase.from('bookings').insert({
+      const { data, error } = await supabase.from('bookings').insert({
         user_id: user.id,
         service_id: service.id,
         service_title: service.title,
@@ -87,30 +105,44 @@ export const RequirementForm = ({
         address: formData.address,
         special_requirements: formData.specialRequirements || null,
         status: 'pending',
-      });
+      }).select().single();
 
       if (error) throw error;
       
       toast({
         title: "Booking Request Submitted! 🎉",
-        description: "We'll match you with verified workers within 24 hours.",
+        description: "Finding the best matched workers for you...",
       });
-      
-      onClose();
-      setStep(1);
-      setFormData({
-        houseSize: '',
-        preferredTime: '',
-        startDate: '',
-        fullName: user?.user_metadata?.full_name || '',
-        phone: '',
-        email: user?.email || '',
-        address: '',
-        specialRequirements: '',
-      });
-      
-      // Navigate to dashboard after successful booking
-      navigate('/dashboard');
+
+      // Store booking ID and trigger worker matching
+      setCurrentBookingId(data.id);
+      setIsSubmitting(false);
+      setShowMatchModal(true);
+      setIsMatchingWorkers(true);
+
+      // Call the match-workers edge function
+      try {
+        const { data: matchData, error: matchError } = await supabase.functions.invoke('match-workers', {
+          body: {
+            bookingId: data.id,
+            serviceType: service.id,
+            preferredTime: formData.preferredTime,
+            address: formData.address,
+          },
+        });
+
+        if (matchError) throw matchError;
+
+        if (matchData?.matchedWorkers) {
+          setMatchedWorkers(matchData.matchedWorkers);
+        }
+      } catch (matchErr) {
+        console.error('Error matching workers:', matchErr);
+        // Still show the modal but with empty workers
+        setMatchedWorkers([]);
+      } finally {
+        setIsMatchingWorkers(false);
+      }
     } catch (error) {
       console.error('Error submitting booking:', error);
       toast({
@@ -118,9 +150,48 @@ export const RequirementForm = ({
         description: "Failed to submit booking. Please try again.",
         variant: "destructive",
       });
-    } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleWorkerSelected = () => {
+    // Reset form and close
+    setStep(1);
+    setFormData({
+      houseSize: '',
+      preferredTime: '',
+      startDate: '',
+      fullName: user?.user_metadata?.full_name || '',
+      phone: '',
+      email: user?.email || '',
+      address: '',
+      specialRequirements: '',
+    });
+    setShowMatchModal(false);
+    setMatchedWorkers([]);
+    setCurrentBookingId(null);
+    onClose();
+    navigate('/dashboard');
+  };
+
+  const handleCloseMatchModal = () => {
+    setShowMatchModal(false);
+    // Reset form state
+    setStep(1);
+    setFormData({
+      houseSize: '',
+      preferredTime: '',
+      startDate: '',
+      fullName: user?.user_metadata?.full_name || '',
+      phone: '',
+      email: user?.email || '',
+      address: '',
+      specialRequirements: '',
+    });
+    setMatchedWorkers([]);
+    setCurrentBookingId(null);
+    onClose();
+    navigate('/dashboard');
   };
 
   const canProceedStep1 = formData.houseSize && formData.preferredTime && formData.startDate;
@@ -443,6 +514,16 @@ export const RequirementForm = ({
           </div>
         </motion.div>
       </motion.div>
+
+      {/* Worker Match Modal */}
+      <WorkerMatchModal
+        isOpen={showMatchModal}
+        onClose={handleCloseMatchModal}
+        matchedWorkers={matchedWorkers}
+        bookingId={currentBookingId || ''}
+        isLoading={isMatchingWorkers}
+        onWorkerSelected={handleWorkerSelected}
+      />
     </AnimatePresence>
   );
 };

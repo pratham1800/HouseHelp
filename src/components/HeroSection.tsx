@@ -9,11 +9,11 @@ export const HeroSection = () => {
 
   return (
     <section className="relative min-h-screen pt-20 md:pt-24 overflow-hidden" style={{ background: 'var(--gradient-hero)' }}>
-      {/* Decorative elements */}
-      <div className="absolute top-20 right-10 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
-      <div className="absolute bottom-20 left-10 w-96 h-96 bg-secondary/5 rounded-full blur-3xl" />
+      {/* Decorative elements - pointer-events-none to prevent blocking clicks */}
+      <div className="absolute top-20 right-10 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-20 left-10 w-96 h-96 bg-secondary/5 rounded-full blur-3xl pointer-events-none" />
       
-      <div className="container-main section-padding">
+      <div className="container-main section-padding relative z-10">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
           {/* Left Content */}
           <motion.div

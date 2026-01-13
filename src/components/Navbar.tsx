@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, ChevronDown, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,7 @@ export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [currentLang, setCurrentLang] = useState('en');
   const [showLangDropdown, setShowLangDropdown] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <motion.nav
@@ -89,11 +91,11 @@ export const Navbar = () => {
             </AnimatePresence>
           </div>
 
-          <Button variant="ghost" size="sm">
+          <Button variant="ghost" size="sm" onClick={() => navigate('/auth')}>
             <User className="w-4 h-4 mr-2" />
             Login
           </Button>
-          <Button variant="default" size="default">
+          <Button variant="default" size="default" onClick={() => navigate('/auth')}>
             Sign Up
           </Button>
         </div>
@@ -146,10 +148,10 @@ export const Navbar = () => {
               </div>
 
               <div className="flex gap-3 pt-4">
-                <Button variant="outline" className="flex-1">
+                <Button variant="outline" className="flex-1" onClick={() => { setIsOpen(false); navigate('/auth'); }}>
                   Login
                 </Button>
-                <Button variant="default" className="flex-1">
+                <Button variant="default" className="flex-1" onClick={() => { setIsOpen(false); navigate('/auth'); }}>
                   Sign Up
                 </Button>
               </div>

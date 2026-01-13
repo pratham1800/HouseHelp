@@ -1,9 +1,12 @@
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Shield, Clock, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import heroImage from '@/assets/hero-illustration.png';
 
 export const HeroSection = () => {
+  const navigate = useNavigate();
+  
   return (
     <section className="relative min-h-screen pt-20 md:pt-24 overflow-hidden" style={{ background: 'var(--gradient-hero)' }}>
       {/* Decorative elements */}
@@ -42,11 +45,11 @@ export const HeroSection = () => {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-10">
-              <Button variant="hero" size="xl" className="group">
+              <Button variant="hero" size="xl" className="group" onClick={() => navigate('/auth')}>
                 Book Now
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
-              <Button variant="outline" size="xl">
+              <Button variant="outline" size="xl" onClick={() => document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' })}>
                 Explore Services
               </Button>
             </div>

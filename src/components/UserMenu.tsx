@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, LogOut, Settings, ChevronDown, LayoutDashboard } from 'lucide-react';
+import { User, LogOut, ChevronDown, LayoutDashboard, UserCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/button';
 
 export const UserMenu = () => {
   const { user, signOut } = useAuth();
@@ -68,18 +67,18 @@ export const UserMenu = () => {
 
               <div className="p-2">
                 <button
+                  onClick={() => handleNavigate('/profile')}
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-left"
+                >
+                  <UserCircle className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm text-foreground">My Profile</span>
+                </button>
+                <button
                   onClick={() => handleNavigate('/dashboard')}
                   className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-left"
                 >
                   <LayoutDashboard className="w-4 h-4 text-muted-foreground" />
                   <span className="text-sm text-foreground">My Bookings</span>
-                </button>
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-left"
-                >
-                  <Settings className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm text-foreground">Settings</span>
                 </button>
                 <button
                   onClick={handleSignOut}

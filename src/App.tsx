@@ -4,9 +4,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import { ChatBot } from "@/components/ChatBot";
 import Index from "./pages/Index";
 import Services from "./pages/Services";
 import Dashboard from "./pages/Dashboard";
+import Management from "./pages/Management";
 import WorkerLanding from "./pages/WorkerLanding";
 import WorkerBenefits from "./pages/WorkerBenefits";
 import WorkerRegistration from "./pages/WorkerRegistration";
@@ -28,6 +30,7 @@ const App = () => (
             <Route path="/services" element={<Services />} />
             <Route path="/services/:serviceId" element={<Services />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/management" element={<Management />} />
             <Route path="/for-workers" element={<WorkerLanding />} />
             <Route path="/for-workers/benefits" element={<WorkerBenefits />} />
             <Route path="/for-workers/register" element={<WorkerRegistration />} />
@@ -36,6 +39,7 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <ChatBot />
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>

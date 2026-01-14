@@ -12,7 +12,7 @@ import {
   Banknote
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Navbar } from '@/components/Navbar';
+import { WorkerNavbar } from '@/components/WorkerNavbar';
 import { Footer } from '@/components/Footer';
 
 const benefits = [
@@ -72,7 +72,7 @@ export default function WorkerLanding() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      <WorkerNavbar />
       
       <main className="pt-20">
         {/* Hero Section */}

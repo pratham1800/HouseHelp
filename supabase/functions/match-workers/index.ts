@@ -43,6 +43,29 @@ const timeToHours: Record<string, string[]> = {
   'flexible': ['Morning', 'Evening', 'Full Day', 'Flexible'],
 };
 
+// Extract city/location from address
+function extractLocation(address: string): string[] {
+  const normalizedAddress = address.toLowerCase().trim();
+  
+  // Common Indian city names and areas
+  const majorCities = [
+    'delhi', 'mumbai', 'bangalore', 'bengaluru', 'chennai', 'kolkata', 
+    'hyderabad', 'pune', 'ahmedabad', 'jaipur', 'lucknow', 'noida', 
+    'gurgaon', 'gurugram', 'chandigarh', 'kochi', 'indore', 'nagpur',
+    'koramangala', 'hsr layout', 'whitefield', 'indiranagar', 'jayanagar',
+    'marathahalli', 'electronic city', 'btm layout', 'jp nagar', 'hebbal'
+  ];
+  
+  const matchedLocations: string[] = [];
+  for (const city of majorCities) {
+    if (normalizedAddress.includes(city)) {
+      matchedLocations.push(city);
+    }
+  }
+  
+  return matchedLocations;
+}
+
 function calculateMatchScore(worker: Worker, serviceType: string, preferredTime: string, address: string): number {
   let score = 0;
   const maxScore = 100;
@@ -53,25 +76,51 @@ function calculateMatchScore(worker: Worker, serviceType: string, preferredTime:
     score += 40;
   }
 
-  // 2. Availability/Working Hours Match (25 points)
+  // 2. Availability/Working Hours Match (20 points)
   const acceptableHours = timeToHours[preferredTime] || timeToHours['flexible'];
   if (worker.working_hours && acceptableHours.includes(worker.working_hours)) {
-    score += 25;
+    score += 20;
   } else if (!worker.working_hours) {
     // If no preference set, give partial score
-    score += 10;
+    score += 8;
   }
 
-  // 3. Area Match (20 points) - Check if address contains any preferred area
-  if (worker.preferred_areas && worker.preferred_areas.length > 0) {
+  // 3. Location/Area Match (30 points) - PRIORITIZE MANUAL LOCATION INPUT
+  const inputLocations = extractLocation(address);
+  
+  if (inputLocations.length > 0 && worker.preferred_areas && worker.preferred_areas.length > 0) {
+    // Check if worker's preferred areas match any of the input locations
+    const workerAreas = worker.preferred_areas.map(area => area.toLowerCase());
+    
+    // Direct location match gets full points
+    const hasDirectMatch = inputLocations.some(loc => 
+      workerAreas.some(area => area.includes(loc) || loc.includes(area))
+    );
+    
+    if (hasDirectMatch) {
+      score += 30;
+    } else {
+      // Check if address string contains any worker preferred area
+      const addressLower = address.toLowerCase();
+      const areaMatch = worker.preferred_areas.some(area => 
+        addressLower.includes(area.toLowerCase())
+      );
+      if (areaMatch) {
+        score += 25;
+      } else {
+        // No location match - significant penalty
+        score += 0;
+      }
+    }
+  } else if (worker.preferred_areas && worker.preferred_areas.length > 0) {
+    // No specific location in input, check general area match
     const addressLower = address.toLowerCase();
     const areaMatch = worker.preferred_areas.some(area => 
       addressLower.includes(area.toLowerCase())
     );
     if (areaMatch) {
-      score += 20;
+      score += 25;
     } else {
-      // Partial score for having preferred areas set
       score += 5;
     }
   } else {
@@ -79,14 +128,14 @@ function calculateMatchScore(worker: Worker, serviceType: string, preferredTime:
     score += 10;
   }
 
-  // 4. Experience Bonus (15 points)
+  // 4. Experience Bonus (10 points)
   if (worker.years_experience) {
     if (worker.years_experience >= 5) {
-      score += 15;
-    } else if (worker.years_experience >= 3) {
       score += 10;
+    } else if (worker.years_experience >= 3) {
+      score += 7;
     } else if (worker.years_experience >= 1) {
-      score += 5;
+      score += 4;
     }
   }
 
@@ -107,7 +156,8 @@ Deno.serve(async (req) => {
     const { bookingId, serviceType, preferredTime, address }: MatchRequest = await req.json();
 
     console.log('Matching workers for booking:', bookingId);
-    console.log('Service type:', serviceType, 'Preferred time:', preferredTime);
+    console.log('Service type:', serviceType, 'Preferred time:', preferredTime, 'Address:', address);
+    console.log('Extracted locations from address:', extractLocation(address));
 
     // Get all verified workers
     const { data: workers, error: workersError } = await supabase

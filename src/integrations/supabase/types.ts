@@ -14,9 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      booking_payments: {
+        Row: {
+          amount: number
+          booking_id: string
+          created_at: string
+          id: string
+          payment_type: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          booking_id: string
+          created_at?: string
+          id?: string
+          payment_type?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          booking_id?: string
+          created_at?: string
+          id?: string
+          payment_type?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_payments_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           address: string
+          assigned_worker_id: string | null
+          call_scheduled_at: string | null
+          call_status: string | null
           created_at: string
           email: string
           full_name: string
@@ -35,6 +76,9 @@ export type Database = {
         }
         Insert: {
           address: string
+          assigned_worker_id?: string | null
+          call_scheduled_at?: string | null
+          call_status?: string | null
           created_at?: string
           email: string
           full_name: string
@@ -53,6 +97,9 @@ export type Database = {
         }
         Update: {
           address?: string
+          assigned_worker_id?: string | null
+          call_scheduled_at?: string | null
+          call_status?: string | null
           created_at?: string
           email?: string
           full_name?: string
@@ -69,7 +116,62 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "bookings_assigned_worker_id_fkey"
+            columns: ["assigned_worker_id"]
+            isOneToOne: false
+            referencedRelation: "workers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hired_workers: {
+        Row: {
+          agreed_salary: number
+          created_at: string
+          hired_date: string
+          id: string
+          notes: string | null
+          owner_id: string
+          salary_frequency: string
+          status: string
+          updated_at: string
+          worker_id: string
+        }
+        Insert: {
+          agreed_salary: number
+          created_at?: string
+          hired_date?: string
+          id?: string
+          notes?: string | null
+          owner_id: string
+          salary_frequency?: string
+          status?: string
+          updated_at?: string
+          worker_id: string
+        }
+        Update: {
+          agreed_salary?: number
+          created_at?: string
+          hired_date?: string
+          id?: string
+          notes?: string | null
+          owner_id?: string
+          salary_frequency?: string
+          status?: string
+          updated_at?: string
+          worker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hired_workers_worker_id_fkey"
+            columns: ["worker_id"]
+            isOneToOne: false
+            referencedRelation: "workers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -137,6 +239,77 @@ export type Database = {
         }
         Relationships: []
       }
+      user_call_limits: {
+        Row: {
+          calls_used: number
+          created_at: string
+          id: string
+          max_calls: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          calls_used?: number
+          created_at?: string
+          id?: string
+          max_calls?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          calls_used?: number
+          created_at?: string
+          id?: string
+          max_calls?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      worker_attendance: {
+        Row: {
+          clock_in: string | null
+          clock_out: string | null
+          created_at: string
+          date: string
+          hired_worker_id: string
+          id: string
+          leave_type: string | null
+          notes: string | null
+          status: string
+        }
+        Insert: {
+          clock_in?: string | null
+          clock_out?: string | null
+          created_at?: string
+          date: string
+          hired_worker_id: string
+          id?: string
+          leave_type?: string | null
+          notes?: string | null
+          status?: string
+        }
+        Update: {
+          clock_in?: string | null
+          clock_out?: string | null
+          created_at?: string
+          date?: string
+          hired_worker_id?: string
+          id?: string
+          leave_type?: string | null
+          notes?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "worker_attendance_hired_worker_id_fkey"
+            columns: ["hired_worker_id"]
+            isOneToOne: false
+            referencedRelation: "hired_workers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       worker_auth: {
         Row: {
           created_at: string
@@ -161,6 +334,88 @@ export type Database = {
             foreignKeyName: "worker_auth_worker_id_fkey"
             columns: ["worker_id"]
             isOneToOne: true
+            referencedRelation: "workers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      worker_awards: {
+        Row: {
+          award_type: string
+          bonus_amount: number | null
+          created_at: string
+          description: string | null
+          id: string
+          is_public: boolean
+          month: string | null
+          title: string
+          worker_id: string
+        }
+        Insert: {
+          award_type: string
+          bonus_amount?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          month?: string | null
+          title: string
+          worker_id: string
+        }
+        Update: {
+          award_type?: string
+          bonus_amount?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          month?: string | null
+          title?: string
+          worker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "worker_awards_worker_id_fkey"
+            columns: ["worker_id"]
+            isOneToOne: false
+            referencedRelation: "workers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      worker_ratings: {
+        Row: {
+          created_at: string
+          id: string
+          is_public: boolean
+          owner_id: string
+          rating: number
+          review: string | null
+          worker_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_public?: boolean
+          owner_id: string
+          rating: number
+          review?: string | null
+          worker_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_public?: boolean
+          owner_id?: string
+          rating?: number
+          review?: string | null
+          worker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "worker_ratings_worker_id_fkey"
+            columns: ["worker_id"]
+            isOneToOne: false
             referencedRelation: "workers"
             referencedColumns: ["id"]
           },

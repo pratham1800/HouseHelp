@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ChevronDown, User } from 'lucide-react';
+import { Menu, X, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthModal } from '@/components/AuthModal';
@@ -14,15 +14,15 @@ const languages = [
   { code: 'mr', label: 'मराठी' },
 ];
 
-const navLinks = [
+const workerNavLinks = [
   { label: 'Services', href: '/#services' },
   { label: 'How It Works', href: '/#how-it-works' },
-  { label: 'Subscription', href: '/#subscription' },
-  { label: 'For Workers', href: '/for-workers' },
-  { label: 'About Us', href: '/#about' },
+  { label: 'For Owners', href: '/' },
+  { label: 'Benefits', href: '/for-workers/benefits' },
+  { label: 'Register', href: '/for-workers/register' },
 ];
 
-export const Navbar = () => {
+export const WorkerNavbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
@@ -80,15 +80,16 @@ export const Navbar = () => {
         <div className="container-main flex items-center justify-between h-16 md:h-20 px-4 md:px-8">
           {/* Logo */}
           <a href="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-secondary to-primary flex items-center justify-center">
               <span className="text-primary-foreground font-bold text-lg">G</span>
             </div>
             <span className="font-bold text-xl text-foreground">GharSeva</span>
+            <span className="text-xs bg-secondary/20 text-secondary px-2 py-0.5 rounded-full">Workers</span>
           </a>
 
           {/* Desktop Nav */}
           <div className="hidden lg:flex items-center gap-8">
-            {navLinks.map((link) => (
+            {workerNavLinks.map((link) => (
               <button
                 key={link.label}
                 onClick={() => handleNavClick(link.href)}
@@ -137,22 +138,10 @@ export const Navbar = () => {
               </AnimatePresence>
             </div>
 
-            {/* Auth Buttons or User Menu */}
-            {loading ? (
-              <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
-            ) : user ? (
-              <UserMenu />
-            ) : (
-              <>
-                <Button variant="ghost" size="sm" onClick={() => openAuthModal('login')}>
-                  <User className="w-4 h-4 mr-2" />
-                  Login
-                </Button>
-                <Button variant="default" size="default" onClick={() => openAuthModal('signup')}>
-                  Sign Up
-                </Button>
-              </>
-            )}
+            {/* Worker Login */}
+            <Button variant="outline" size="sm" onClick={() => navigate('/for-workers/dashboard')}>
+              Worker Login
+            </Button>
           </div>
 
           {/* Mobile Menu Button */}
@@ -174,7 +163,7 @@ export const Navbar = () => {
               className="lg:hidden bg-background border-b border-border overflow-hidden"
             >
               <div className="px-4 py-6 space-y-4">
-                {navLinks.map((link) => (
+                {workerNavLinks.map((link) => (
                   <button
                     key={link.label}
                     onClick={() => handleNavClick(link.href)}
@@ -192,7 +181,7 @@ export const Navbar = () => {
                       onClick={() => setCurrentLang(lang.code)}
                       className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
                         currentLang === lang.code
-                          ? 'bg-primary text-primary-foreground'
+                          ? 'bg-secondary text-secondary-foreground'
                           : 'bg-muted text-muted-foreground'
                       }`}
                     >
@@ -201,23 +190,19 @@ export const Navbar = () => {
                   ))}
                 </div>
 
-                {/* Auth Buttons Mobile */}
-                {loading ? (
-                  <div className="h-10 bg-muted rounded-lg animate-pulse" />
-                ) : user ? (
-                  <div className="pt-4 border-t border-border">
-                    <UserMenu />
-                  </div>
-                ) : (
-                  <div className="flex gap-3 pt-4">
-                    <Button variant="outline" className="flex-1" onClick={() => openAuthModal('login')}>
-                      Login
-                    </Button>
-                    <Button variant="default" className="flex-1" onClick={() => openAuthModal('signup')}>
-                      Sign Up
-                    </Button>
-                  </div>
-                )}
+                {/* Worker Login Mobile */}
+                <div className="pt-4">
+                  <Button 
+                    variant="outline" 
+                    className="w-full" 
+                    onClick={() => {
+                      setIsOpen(false);
+                      navigate('/for-workers/dashboard');
+                    }}
+                  >
+                    Worker Login
+                  </Button>
+                </div>
               </div>
             </motion.div>
           )}

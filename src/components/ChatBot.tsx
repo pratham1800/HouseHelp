@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageCircle, X, Send, Bot, User, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,17 +15,34 @@ interface Message {
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat-support`;
 
 export const ChatBot = () => {
+  const location = useLocation();
+  const isWorkerPortal = location.pathname.startsWith('/for-workers');
+  
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     { 
       role: 'assistant', 
-      content: 'Hi! 👋 I\'m GharSeva\'s assistant. How can I help you today? Ask me about our services, pricing, or how to book.' 
+      content: isWorkerPortal 
+        ? 'Hi! 👋 I\'m GharSeva\'s worker support assistant. How can I help you today? Ask me about registration, verification, earnings, or benefits.'
+        : 'Hi! 👋 I\'m GharSeva\'s assistant. How can I help you today? Ask me about our services, pricing, or how to book.' 
     }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  // Reset messages when switching between portals
+  useEffect(() => {
+    setMessages([
+      { 
+        role: 'assistant', 
+        content: isWorkerPortal 
+          ? 'Hi! 👋 I\'m GharSeva\'s worker support assistant. How can I help you today? Ask me about registration, verification, earnings, or benefits.'
+          : 'Hi! 👋 I\'m GharSeva\'s assistant. How can I help you today? Ask me about our services, pricing, or how to book.' 
+      }
+    ]);
+  }, [isWorkerPortal]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -50,7 +68,10 @@ export const ChatBot = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({ messages: newMessages }),
+        body: JSON.stringify({ 
+          messages: newMessages,
+          context: isWorkerPortal ? 'worker' : 'owner'
+        }),
       });
 
       if (response.status === 429) {
@@ -199,14 +220,22 @@ export const ChatBot = () => {
             className="fixed bottom-24 right-6 z-50 w-[360px] max-w-[calc(100vw-48px)] h-[500px] max-h-[calc(100vh-160px)] bg-card rounded-2xl shadow-elevated border border-border flex flex-col overflow-hidden"
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-primary to-accent text-white">
+            <div className={`flex items-center justify-between px-4 py-3 text-white ${
+              isWorkerPortal 
+                ? 'bg-gradient-to-r from-secondary to-primary'
+                : 'bg-gradient-to-r from-primary to-accent'
+            }`}>
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
                   <Bot className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-sm">GharSeva Support</h3>
-                  <p className="text-xs text-white/80">Ask me anything!</p>
+                  <h3 className="font-semibold text-sm">
+                    {isWorkerPortal ? 'Worker Support' : 'GharSeva Support'}
+                  </h3>
+                  <p className="text-xs text-white/80">
+                    {isWorkerPortal ? 'Help with jobs & earnings' : 'Ask me anything!'}
+                  </p>
                 </div>
               </div>
               <button

@@ -31,6 +31,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { servicesData } from '@/data/servicesData';
 
+interface Worker {
+  id: string;
+  name: string;
+  phone: string;
+  work_type: string;
+  years_experience: number | null;
+  preferred_areas: string[] | null;
+}
+
 interface Booking {
   id: string;
   service_id: string;
@@ -47,6 +56,11 @@ interface Booking {
   status: string;
   created_at: string;
   updated_at: string;
+  assigned_worker_id: string | null;
+  call_scheduled_at: string | null;
+  call_status: string | null;
+  worker?: Worker;
+  avg_rating?: number;
 }
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
@@ -122,19 +136,60 @@ const Dashboard = () => {
 
   const fetchBookings = async () => {
     try {
+      // Fetch bookings with assigned worker data
       const { data, error } = await supabase
         .from('bookings')
-        .select('*')
+        .select(`
+          *,
+          workers:assigned_worker_id (
+            id,
+            name,
+            phone,
+            work_type,
+            years_experience,
+            preferred_areas
+          )
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       
-      // Parse sub_services from JSON
+      // Get worker ratings for assigned workers
+      const workerIds = (data || [])
+        .filter(b => b.assigned_worker_id)
+        .map(b => b.assigned_worker_id);
+      
+      let ratingsMap: Record<string, number> = {};
+      if (workerIds.length > 0) {
+        const { data: ratings } = await supabase
+          .from('worker_ratings')
+          .select('worker_id, rating')
+          .in('worker_id', workerIds);
+        
+        if (ratings) {
+          // Calculate average rating per worker
+          const ratingCounts: Record<string, { sum: number; count: number }> = {};
+          ratings.forEach(r => {
+            if (!ratingCounts[r.worker_id]) {
+              ratingCounts[r.worker_id] = { sum: 0, count: 0 };
+            }
+            ratingCounts[r.worker_id].sum += r.rating;
+            ratingCounts[r.worker_id].count += 1;
+          });
+          Object.entries(ratingCounts).forEach(([workerId, data]) => {
+            ratingsMap[workerId] = data.sum / data.count;
+          });
+        }
+      }
+      
+      // Parse sub_services from JSON and attach worker data
       const parsedBookings = (data || []).map(booking => ({
         ...booking,
         sub_services: typeof booking.sub_services === 'string' 
           ? JSON.parse(booking.sub_services) 
-          : booking.sub_services || []
+          : booking.sub_services || [],
+        worker: booking.workers as Worker | undefined,
+        avg_rating: booking.assigned_worker_id ? ratingsMap[booking.assigned_worker_id] : undefined
       }));
       
       setBookings(parsedBookings);
@@ -485,6 +540,36 @@ const Dashboard = () => {
                           className="overflow-hidden"
                         >
                           <div className="pt-4 mt-4 border-t border-border space-y-4">
+                            {/* Assigned Worker */}
+                            {booking.worker && (
+                              <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
+                                <p className="text-sm font-medium text-foreground mb-3">Assigned Worker</p>
+                                <div className="flex items-center gap-4">
+                                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                                    <User className="w-6 h-6 text-primary" />
+                                  </div>
+                                  <div className="flex-1">
+                                    <p className="font-semibold text-foreground">{booking.worker.name}</p>
+                                    <p className="text-sm text-muted-foreground capitalize">
+                                      {booking.worker.work_type?.replace('_', ' ')} • {booking.worker.years_experience || 0} yrs exp
+                                    </p>
+                                    {booking.avg_rating && (
+                                      <div className="flex items-center gap-1 mt-1">
+                                        <span className="text-yellow-500">★</span>
+                                        <span className="text-sm font-medium">{booking.avg_rating.toFixed(1)}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                  {booking.call_scheduled_at && (
+                                    <div className="text-right">
+                                      <p className="text-xs text-muted-foreground">Call scheduled</p>
+                                      <p className="text-sm font-medium text-primary">{booking.worker.phone}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
                             {/* Sub-services */}
                             <div>
                               <p className="text-sm font-medium text-foreground mb-2">Selected Services</p>

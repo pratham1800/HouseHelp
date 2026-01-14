@@ -41,7 +41,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages } = await req.json();
+    const { messages, context } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
@@ -49,7 +49,41 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    console.log("Calling Lovable AI gateway with", messages.length, "messages");
+    // Determine context-specific system prompt
+    let contextPrompt = SYSTEM_PROMPT;
+    if (context === 'worker') {
+      contextPrompt = `You are GharSeva's friendly worker support assistant. You help domestic workers with questions about registration, verification, earnings, and benefits.
+
+About GharSeva for Workers:
+- GharSeva connects domestic workers (maids, cooks, drivers, gardeners) with verified families
+- Workers can register through our portal and get verified
+- After verification, workers get matched with families in their preferred areas
+- Workers can earn bonuses and awards like "Worker of the Month"
+
+Worker Benefits:
+- Free registration and verification
+- Health and accident insurance after 6 months
+- Regular work with good families
+- Monthly bonuses for top performers
+- Festival bonuses and gifts
+- Training and skill development
+
+Verification Process:
+1. Submit ID proof (Aadhaar, PAN, Voter ID)
+2. Background verification (2-3 days)
+3. Skills assessment call
+4. Profile activation and matching
+
+Earnings & Bonuses:
+- Workers keep 100% of their salary from families
+- Top performers get monthly bonuses (₹500-2000)
+- "Worker of the Month" award with ₹1000 bonus
+- Festival bonuses during Diwali, Holi
+
+Be helpful, concise, and friendly. Speak simply as many workers may not be fluent in English. If you don't know something specific, suggest they contact WhatsApp support at +91 98765 43210.`;
+    }
+
+    console.log("Calling Lovable AI gateway with", messages.length, "messages, context:", context || 'owner');
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -60,7 +94,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
+          { role: "system", content: contextPrompt },
           ...messages,
         ],
         stream: true,

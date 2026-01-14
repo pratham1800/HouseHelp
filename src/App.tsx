@@ -14,6 +14,7 @@ import WorkerBenefits from "./pages/WorkerBenefits";
 import WorkerRegistration from "./pages/WorkerRegistration";
 import WorkerDashboard from "./pages/WorkerDashboard";
 import WorkerVerification from "./pages/WorkerVerification";
+import WorkerAuth from "./pages/WorkerAuth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/management" element={<Management />} />
             <Route path="/for-workers" element={<WorkerLanding />} />
+            <Route path="/for-workers/auth" element={<WorkerAuth />} />
             <Route path="/for-workers/benefits" element={<WorkerBenefits />} />
             <Route path="/for-workers/register" element={<WorkerRegistration />} />
             <Route path="/for-workers/dashboard" element={<WorkerDashboard />} />

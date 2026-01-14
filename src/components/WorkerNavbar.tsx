@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ChevronDown, Briefcase, User, LogOut, Calendar, Shield } from 'lucide-react';
+import { Menu, X, ChevronDown, Briefcase, User, LogOut, LayoutDashboard, Gift, HelpCircle, UserCircle, IndianRupee } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -18,6 +18,7 @@ export const WorkerNavbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [currentLang, setCurrentLang] = useState('en');
   const [showLangDropdown, setShowLangDropdown] = useState(false);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
 
   const { user, signOut } = useAuth();
 
@@ -26,49 +27,18 @@ export const WorkerNavbar = () => {
     navigate('/for-workers');
   };
 
-  // Different nav links based on auth status
-  const publicNavLinks = [
-    { label: 'Services', href: '/#services', icon: null },
-    { label: 'How It Works', href: '/#how-it-works', icon: null },
-    { label: 'For Owners', href: '/', icon: null },
-    { label: 'Benefits', href: '/for-workers/benefits', icon: null },
+  // Worker-specific nav links - NO Services or Subscription plans
+  const navLinks = [
+    { label: 'Benefits', href: '/for-workers/benefits', icon: Gift },
+    { label: 'My Dashboard', href: '/for-workers/dashboard', icon: LayoutDashboard },
+    { label: 'How It Works', href: '/for-workers/how-it-works', icon: HelpCircle },
   ];
 
-  const authNavLinks = [
-    { label: 'My Schedule', href: '/for-workers/dashboard', icon: Calendar },
-    { label: 'Verification', href: '/for-workers/verification', icon: Shield },
-  ];
-
-  const navLinks = user ? authNavLinks : publicNavLinks;
   const isActive = (path: string) => location.pathname === path;
 
   const handleNavClick = (href: string) => {
     setIsOpen(false);
-    
-    if (href.startsWith('/#')) {
-      const sectionId = href.substring(2);
-      if (location.pathname !== '/') {
-        navigate('/');
-        setTimeout(() => {
-          const element = document.getElementById(sectionId);
-          if (element) {
-            element.scrollIntoView({ behavior: 'smooth' });
-          }
-        }, 100);
-      } else {
-        const element = document.getElementById(sectionId);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth' });
-        }
-      }
-    } else if (href.startsWith('/')) {
-      navigate(href);
-    } else if (href.startsWith('#')) {
-      const element = document.getElementById(href.substring(1));
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' });
-      }
-    }
+    navigate(href);
   };
 
   return (
@@ -108,14 +78,12 @@ export const WorkerNavbar = () => {
           ))}
           
           {/* Switch to Owner Portal */}
-          {user && (
-            <Link
-              to="/"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              For Owners →
-            </Link>
-          )}
+          <Link
+            to="/"
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors border-l border-border pl-6"
+          >
+            For Owners →
+          </Link>
         </div>
 
         {/* Right Side Actions */}
@@ -158,16 +126,96 @@ export const WorkerNavbar = () => {
 
           {/* Auth Actions */}
           {user ? (
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-secondary/10 rounded-full">
-                <User className="w-4 h-4 text-secondary" />
-                <span className="text-sm font-medium text-secondary">
+            <div className="relative">
+              <button
+                onClick={() => setShowUserDropdown(!showUserDropdown)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors"
+              >
+                {user.user_metadata?.avatar_url ? (
+                  <img
+                    src={user.user_metadata.avatar_url}
+                    alt="Profile"
+                    className="w-8 h-8 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                    <span className="text-secondary-foreground font-medium text-sm">
+                      {(user.user_metadata?.full_name || user.email || 'W').charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                )}
+                <span className="hidden md:inline text-sm font-medium text-foreground">
                   {user.user_metadata?.full_name?.split(' ')[0] || 'Worker'}
                 </span>
-              </div>
-              <Button variant="ghost" size="icon" onClick={handleSignOut}>
-                <LogOut className="w-5 h-5" />
-              </Button>
+                <ChevronDown className="w-4 h-4 text-muted-foreground" />
+              </button>
+
+              <AnimatePresence>
+                {showUserDropdown && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setShowUserDropdown(false)}
+                    />
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="absolute top-full right-0 mt-2 w-56 bg-card rounded-xl shadow-elevated border border-border overflow-hidden z-50"
+                    >
+                      <div className="px-4 py-3 border-b border-border">
+                        <p className="text-sm font-medium text-foreground truncate">
+                          {user.user_metadata?.full_name || 'Worker'}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                      </div>
+
+                      <div className="p-2">
+                        <button
+                          onClick={() => {
+                            navigate('/for-workers/profile');
+                            setShowUserDropdown(false);
+                          }}
+                          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-left"
+                        >
+                          <UserCircle className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-sm text-foreground">My Profile</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            navigate('/for-workers/dashboard');
+                            setShowUserDropdown(false);
+                          }}
+                          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-left"
+                        >
+                          <LayoutDashboard className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-sm text-foreground">My Dashboard</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            navigate('/for-workers/earnings');
+                            setShowUserDropdown(false);
+                          }}
+                          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-left"
+                        >
+                          <IndianRupee className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-sm text-foreground">Earnings</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleSignOut();
+                            setShowUserDropdown(false);
+                          }}
+                          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-left text-destructive"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          <span className="text-sm">Sign Out</span>
+                        </button>
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
             </div>
           ) : (
             <Button onClick={() => navigate('/for-workers/auth')}>
@@ -209,16 +257,39 @@ export const WorkerNavbar = () => {
                   {link.label}
                 </button>
               ))}
-              
+
               {user && (
-                <Link
-                  to="/"
-                  onClick={() => setIsOpen(false)}
-                  className="block py-2 text-muted-foreground hover:text-foreground"
-                >
-                  Switch to Owner Portal →
-                </Link>
+                <>
+                  <button
+                    onClick={() => {
+                      navigate('/for-workers/profile');
+                      setIsOpen(false);
+                    }}
+                    className="flex items-center gap-3 w-full text-left py-2 font-medium text-foreground hover:text-primary"
+                  >
+                    <UserCircle className="w-5 h-5" />
+                    My Profile
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigate('/for-workers/earnings');
+                      setIsOpen(false);
+                    }}
+                    className="flex items-center gap-3 w-full text-left py-2 font-medium text-foreground hover:text-primary"
+                  >
+                    <IndianRupee className="w-5 h-5" />
+                    Earnings
+                  </button>
+                </>
               )}
+              
+              <Link
+                to="/"
+                onClick={() => setIsOpen(false)}
+                className="block py-2 text-muted-foreground hover:text-foreground border-t border-border pt-4"
+              >
+                Switch to Owner Portal →
+              </Link>
               
               {/* Language Switcher Mobile */}
               <div className="flex gap-2 py-2">

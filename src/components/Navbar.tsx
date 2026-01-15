@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
 import { AuthModal } from '@/components/AuthModal';
 import { UserMenu } from '@/components/UserMenu';
+import { PortalSwitchModal } from '@/components/PortalSwitchModal';
 
 const languages = [
   { code: 'en' as const, label: 'EN' },
@@ -22,6 +23,7 @@ export const Navbar = () => {
   const [showLangDropdown, setShowLangDropdown] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const [showPortalSwitch, setShowPortalSwitch] = useState(false);
 
   const { user, loading } = useAuth();
   const { language, setLanguage, t } = useLanguage();
@@ -30,7 +32,7 @@ export const Navbar = () => {
     { label: t('services'), href: '/#services' },
     { label: t('howItWorks'), href: '/#how-it-works' },
     { label: t('subscription'), href: '/#subscription' },
-    { label: t('forWorkers'), href: '/for-workers' },
+    { label: t('forWorkers'), href: '/for-workers', isPortalSwitch: true },
     { label: t('aboutUs'), href: '/#about' },
   ];
 
@@ -40,8 +42,14 @@ export const Navbar = () => {
     setIsOpen(false);
   };
 
-  const handleNavClick = (href: string) => {
+  const handleNavClick = (href: string, isPortalSwitch?: boolean) => {
     setIsOpen(false);
+    
+    // Check if user is logged in and trying to switch to worker portal
+    if (isPortalSwitch && href === '/for-workers' && user) {
+      setShowPortalSwitch(true);
+      return;
+    }
     
     // Handle anchor links that need navigation to home page first
     if (href.startsWith('/#')) {
@@ -92,7 +100,7 @@ export const Navbar = () => {
             {navLinks.map((link) => (
               <button
                 key={link.label}
-                onClick={() => handleNavClick(link.href)}
+                onClick={() => handleNavClick(link.href, link.isPortalSwitch)}
                 className="text-muted-foreground hover:text-foreground font-medium transition-colors duration-200"
               >
                 {link.label}
@@ -177,7 +185,7 @@ export const Navbar = () => {
                 {navLinks.map((link) => (
                   <button
                     key={link.label}
-                    onClick={() => handleNavClick(link.href)}
+                    onClick={() => handleNavClick(link.href, link.isPortalSwitch)}
                     className="block w-full text-left py-2 text-foreground font-medium hover:text-primary transition-colors"
                   >
                     {link.label}
@@ -229,6 +237,13 @@ export const Navbar = () => {
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
         defaultMode={authMode}
+      />
+
+      {/* Portal Switch Modal */}
+      <PortalSwitchModal
+        isOpen={showPortalSwitch}
+        onClose={() => setShowPortalSwitch(false)}
+        targetPortal="worker"
       />
     </>
   );

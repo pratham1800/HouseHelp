@@ -5,6 +5,7 @@ import { Menu, X, ChevronDown, Briefcase, User, LogOut, LayoutDashboard, Gift, H
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
+import { PortalSwitchModal } from '@/components/PortalSwitchModal';
 
 const languages = [
   { code: 'en' as const, label: 'EN' },
@@ -19,6 +20,7 @@ export const WorkerNavbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [showLangDropdown, setShowLangDropdown] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [showPortalSwitch, setShowPortalSwitch] = useState(false);
 
   const { user, signOut } = useAuth();
   const { language, setLanguage, t } = useLanguage();
@@ -40,6 +42,15 @@ export const WorkerNavbar = () => {
   const handleNavClick = (href: string) => {
     setIsOpen(false);
     navigate(href);
+  };
+
+  const handleOwnerPortalClick = () => {
+    setIsOpen(false);
+    if (user) {
+      setShowPortalSwitch(true);
+    } else {
+      navigate('/');
+    }
   };
 
   return (
@@ -79,12 +90,12 @@ export const WorkerNavbar = () => {
           ))}
           
           {/* Switch to Owner Portal */}
-          <Link
-            to="/"
+          <button
+            onClick={handleOwnerPortalClick}
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors border-l border-border pl-6"
           >
             For Owners →
-          </Link>
+          </button>
         </div>
 
         {/* Right Side Actions */}
@@ -314,13 +325,12 @@ export const WorkerNavbar = () => {
                 </>
               )}
               
-              <Link
-                to="/"
-                onClick={() => setIsOpen(false)}
-                className="block py-2 text-muted-foreground hover:text-foreground border-t border-border pt-4"
+              <button
+                onClick={handleOwnerPortalClick}
+                className="block w-full text-left py-2 text-muted-foreground hover:text-foreground border-t border-border pt-4"
               >
                 Switch to Owner Portal →
-              </Link>
+              </button>
               
               {/* Language Switcher Mobile */}
               <div className="flex gap-2 py-2">
@@ -369,6 +379,13 @@ export const WorkerNavbar = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Portal Switch Modal */}
+      <PortalSwitchModal
+        isOpen={showPortalSwitch}
+        onClose={() => setShowPortalSwitch(false)}
+        targetPortal="owner"
+      />
     </motion.nav>
   );
 };

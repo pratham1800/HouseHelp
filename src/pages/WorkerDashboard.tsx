@@ -196,21 +196,29 @@ export default function WorkerDashboard() {
             <div className="card-elevated p-8">
               <AlertCircle className="w-16 h-16 text-muted-foreground mx-auto mb-6" />
               <h1 className="text-2xl font-bold text-foreground mb-2">
-                No Worker Profile Found
+                Complete Your Profile
               </h1>
               <p className="text-muted-foreground mb-6">
-                Your account is not linked to a worker profile yet. Please contact our team to get registered as a worker.
+                Your worker profile needs to be completed. Please fill in your details to start receiving work opportunities.
               </p>
               <div className="space-y-3">
                 <Button 
-                  onClick={() => window.open('https://wa.me/919876543210?text=Hi, I want to register as a worker', '_blank')}
+                  onClick={() => navigate('/for-workers/verification')}
                   className="w-full"
                 >
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Register via WhatsApp
+                  <User className="w-4 h-4 mr-2" />
+                  Complete Verification
                 </Button>
                 <Button 
                   variant="outline"
+                  onClick={() => window.open('https://wa.me/919876543210?text=Hi, I need help with my worker registration', '_blank')}
+                  className="w-full"
+                >
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  Contact Support
+                </Button>
+                <Button 
+                  variant="ghost"
                   onClick={() => navigate('/for-workers')}
                   className="w-full"
                 >

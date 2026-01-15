@@ -34,6 +34,8 @@ interface ProfileData {
   full_name: string | null;
   phone: string | null;
   avatar_url: string | null;
+  location: string | null;
+  address: string | null;
 }
 
 const Profile = () => {
@@ -82,10 +84,10 @@ const Profile = () => {
         fullName: data?.full_name || user?.user_metadata?.full_name || '',
         email: user?.email || '',
         phone: data?.phone || '',
-        location: '' // We'll add location field to profiles table if needed
+        location: data?.location || ''
       });
       
-      setOriginalLocation(''); // Store original location for comparison
+      setOriginalLocation(data?.location || '');
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -131,6 +133,7 @@ const Profile = () => {
           id: user!.id,
           full_name: formData.fullName,
           phone: formData.phone,
+          location: formData.location,
           updated_at: new Date().toISOString()
         });
 

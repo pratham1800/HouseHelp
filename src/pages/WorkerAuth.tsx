@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, Eye, EyeOff, Loader2, ArrowLeft, Briefcase } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, Loader2, ArrowLeft, Briefcase, ArrowRight, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -34,27 +34,132 @@ export default function WorkerAuth() {
   const [loading, setLoading] = useState(false);
   const [showSwitchOption, setShowSwitchOption] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [existingWorkerProfile, setExistingWorkerProfile] = useState(false);
+  const [ownerData, setOwnerData] = useState<{ full_name: string; phone: string; address: string } | null>(null);
+  const [migrationLoading, setMigrationLoading] = useState(false);
 
-  // Check if user is already logged in - show option to continue or switch
+  // Check if user is already logged in and if they have existing profiles
   useEffect(() => {
-    if (user && !authLoading) {
-      setShowSwitchOption(true);
-    }
+    const checkUserStatus = async () => {
+      if (user && !authLoading) {
+        // Check if user already has a worker profile
+        const { data: workerAuth } = await supabase
+          .from('worker_auth')
+          .select('worker_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (workerAuth?.worker_id) {
+          setExistingWorkerProfile(true);
+        }
+
+        // Fetch owner profile data for potential migration
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name, phone, address')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (profile) {
+          setOwnerData({
+            full_name: profile.full_name || user.user_metadata?.full_name || '',
+            phone: profile.phone || '',
+            address: profile.address || ''
+          });
+        }
+
+        setShowSwitchOption(true);
+      }
+    };
+
+    checkUserStatus();
   }, [user, authLoading]);
 
   const handleContinueAsWorker = async () => {
-    // Update profile to set role as worker
-    await supabase
-      .from('profiles')
-      .update({ user_role: 'worker' })
-      .eq('id', user!.id);
+    if (!user) return;
     
-    navigate('/for-workers/dashboard');
+    setMigrationLoading(true);
+
+    try {
+      // Check if worker profile already exists
+      const { data: existingWorkerAuth } = await supabase
+        .from('worker_auth')
+        .select('worker_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (existingWorkerAuth?.worker_id) {
+        // Worker profile exists, just update role and navigate
+        await supabase
+          .from('profiles')
+          .update({ user_role: 'worker' })
+          .eq('id', user.id);
+        
+        navigate('/for-workers/dashboard');
+        return;
+      }
+
+      // Create new worker profile with default stats
+      const { data: newWorker, error: workerError } = await supabase
+        .from('workers')
+        .insert({
+          name: ownerData?.full_name || user.user_metadata?.full_name || 'Worker',
+          phone: ownerData?.phone || '',
+          work_type: 'domestic_help', // Default, can be updated later
+          years_experience: 0,
+          languages_spoken: [],
+          preferred_areas: [],
+          working_hours: 'full_day',
+          residential_address: ownerData?.address || '',
+          status: 'pending_verification',
+          match_score: 0
+        })
+        .select('id')
+        .single();
+
+      if (workerError) throw workerError;
+
+      // Link user to worker profile
+      const { error: linkError } = await supabase
+        .from('worker_auth')
+        .insert({
+          user_id: user.id,
+          worker_id: newWorker.id,
+          migrated_from_owner: true,
+          migrated_at: new Date().toISOString()
+        });
+
+      if (linkError) throw linkError;
+
+      // Update profile role
+      await supabase
+        .from('profiles')
+        .update({ user_role: 'worker' })
+        .eq('id', user.id);
+
+      toast({
+        title: 'Worker Profile Created!',
+        description: 'Your worker account has been initialized. Please complete your verification.',
+      });
+
+      navigate('/for-workers/verification');
+    } catch (error: any) {
+      console.error('Migration error:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to create worker profile',
+        variant: 'destructive',
+      });
+    } finally {
+      setMigrationLoading(false);
+    }
   };
 
   const handleSwitchAccount = async () => {
     await signOut();
     setShowSwitchOption(false);
+    setExistingWorkerProfile(false);
+    setOwnerData(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -87,10 +192,7 @@ export default function WorkerAuth() {
             variant: 'destructive',
           });
         } else {
-          // Update role to worker after login
-          if (user) {
-            await supabase.from('profiles').update({ user_role: 'worker' }).eq('id', user.id);
-          }
+          // User will be redirected via useEffect when user state updates
           toast({ title: 'Welcome back!', description: 'You have successfully logged in.' });
         }
       } else {
@@ -119,7 +221,7 @@ export default function WorkerAuth() {
         } else {
           toast({
             title: 'Welcome to GharSeva!',
-            description: 'Your worker account has been created.',
+            description: 'Your worker account has been created. Complete your profile to get started.',
           });
         }
       }
@@ -178,30 +280,82 @@ export default function WorkerAuth() {
               <User className="w-7 h-7 text-white" />
             </div>
             <h2 className="text-2xl font-bold text-center text-foreground mb-2">
-              Already Signed In
+              {existingWorkerProfile ? 'Worker Account Found' : 'Already Signed In'}
             </h2>
             <p className="text-muted-foreground text-center mb-6">
               You're signed in as <strong>{user.email}</strong>
             </p>
 
-            <div className="space-y-3">
-              <Button 
-                className="w-full" 
-                size="lg"
-                onClick={handleContinueAsWorker}
-              >
-                <Briefcase className="w-4 h-4 mr-2" />
-                Continue as Worker
-              </Button>
-              <Button 
-                variant="outline" 
-                className="w-full" 
-                size="lg"
-                onClick={handleSwitchAccount}
-              >
-                Switch to Different Account
-              </Button>
+            {existingWorkerProfile ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg text-green-700 dark:text-green-400 mb-4">
+                  <CheckCircle className="w-5 h-5" />
+                  <span className="text-sm">You already have a worker profile</span>
+                </div>
+                <Button 
+                  className="w-full" 
+                  size="lg"
+                  onClick={() => navigate('/for-workers/dashboard')}
+                >
+                  <Briefcase className="w-4 h-4 mr-2" />
+                  Go to Worker Dashboard
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="p-4 bg-muted/50 rounded-lg mb-4">
+                  <h3 className="font-medium text-foreground mb-2">Create Worker Profile</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Your owner account data will be used to pre-fill your worker registration:
+                  </p>
+                  {ownerData && (
+                    <ul className="text-sm text-muted-foreground mt-2 space-y-1">
+                      {ownerData.full_name && <li>• Name: {ownerData.full_name}</li>}
+                      {ownerData.phone && <li>• Phone: {ownerData.phone}</li>}
+                      {ownerData.address && <li>• Address: {ownerData.address}</li>}
+                    </ul>
+                  )}
+                </div>
+                
+                <Button 
+                  className="w-full" 
+                  size="lg"
+                  onClick={handleContinueAsWorker}
+                  disabled={migrationLoading}
+                >
+                  {migrationLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Creating Profile...
+                    </>
+                  ) : (
+                    <>
+                      <Briefcase className="w-4 h-4 mr-2" />
+                      Continue as Worker
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-border"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-card text-muted-foreground">or</span>
+              </div>
             </div>
+
+            <Button 
+              variant="outline" 
+              className="w-full" 
+              size="lg"
+              onClick={handleSwitchAccount}
+            >
+              Switch to Different Account
+            </Button>
 
             <p className="text-center text-muted-foreground mt-6 text-sm">
               Looking to hire help?{' '}

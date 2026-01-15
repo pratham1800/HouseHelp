@@ -3,168 +3,318 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft,
-  Search,
-  Eye,
   CheckCircle,
-  XCircle,
+  Clock,
+  AlertCircle,
   Loader2,
+  Upload,
   User,
   Phone,
-  MapPin,
+  Briefcase,
+  MessageCircle,
   FileText,
-  Clock
+  Check
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { WorkerNavbar } from '@/components/WorkerNavbar';
 import { Footer } from '@/components/Footer';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
-interface Worker {
+interface WorkerData {
   id: string;
   name: string;
   phone: string;
   work_type: string;
   status: string;
-  created_at: string;
-  id_proof_url: string | null;
   years_experience: number;
   languages_spoken: string[];
   preferred_areas: string[];
+  working_hours: string;
   residential_address: string | null;
-  notes: string | null;
+  age: number | null;
+  gender: string | null;
+  has_whatsapp: boolean;
+  id_proof_url: string | null;
 }
 
-const workTypeLabels: Record<string, string> = {
-  domestic_help: 'Domestic Help',
-  cooking: 'Cooking',
-  driving: 'Driving',
-  gardening: 'Gardening'
-};
+const workTypes = [
+  { value: 'domestic_help', label: 'Domestic Help (घरेलू सहायता)' },
+  { value: 'cooking', label: 'Cooking (खाना बनाना)' },
+  { value: 'driving', label: 'Driving (ड्राइविंग)' },
+  { value: 'gardening', label: 'Gardening (बागवानी)' },
+];
 
-const statusColors: Record<string, string> = {
-  pending_verification: 'bg-amber-100 text-amber-700',
-  verified: 'bg-green-100 text-green-700',
-  rejected: 'bg-red-100 text-red-700',
-  assigned: 'bg-blue-100 text-blue-700'
+const languageOptions = [
+  'English', 'Hindi', 'Kannada', 'Tamil', 'Telugu', 'Marathi', 'Bengali', 'Gujarati'
+];
+
+const areaOptions = [
+  'Koramangala', 'Indiranagar', 'HSR Layout', 'Whitefield', 'Electronic City',
+  'Jayanagar', 'JP Nagar', 'BTM Layout', 'Marathahalli', 'Bannerghatta Road'
+];
+
+const workingHoursOptions = [
+  { value: 'morning', label: 'Morning (6 AM - 12 PM)' },
+  { value: 'evening', label: 'Evening (12 PM - 8 PM)' },
+  { value: 'full_day', label: 'Full Day (6 AM - 8 PM)' },
+];
+
+const statusConfig: Record<string, { label: string; color: string; icon: any; description: string }> = {
+  pending_verification: {
+    label: 'Pending Verification',
+    color: 'bg-amber-100 text-amber-700',
+    icon: Clock,
+    description: 'Your profile is being reviewed by our team. This usually takes 24-48 hours.'
+  },
+  verified: {
+    label: 'Verified',
+    color: 'bg-green-100 text-green-700',
+    icon: CheckCircle,
+    description: 'Your profile is verified! You will be matched with households soon.'
+  },
+  rejected: {
+    label: 'Verification Failed',
+    color: 'bg-red-100 text-red-700',
+    icon: AlertCircle,
+    description: 'Your verification was not successful. Please contact support for assistance.'
+  }
 };
 
 export default function WorkerVerification() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   
-  const [workers, setWorkers] = useState<Worker[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
-  const [verificationNotes, setVerificationNotes] = useState('');
-  const [processing, setProcessing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [worker, setWorker] = useState<WorkerData | null>(null);
+  const [workerId, setWorkerId] = useState<string | null>(null);
+  const [idProofFile, setIdProofFile] = useState<File | null>(null);
+  
+  const [formData, setFormData] = useState({
+    name: '',
+    age: '',
+    gender: '',
+    phone: '',
+    hasWhatsapp: true,
+    workType: 'domestic_help',
+    yearsExperience: '',
+    languagesSpoken: [] as string[],
+    preferredAreas: [] as string[],
+    workingHours: 'full_day',
+    residentialAddress: '',
+  });
 
   useEffect(() => {
-    if (user) {
-      fetchWorkers();
+    if (!authLoading && !user) {
+      navigate('/for-workers/auth');
+      return;
     }
-  }, [user]);
+    
+    if (user) {
+      fetchWorkerData();
+    }
+  }, [user, authLoading, navigate]);
 
-  const fetchWorkers = async () => {
+  const fetchWorkerData = async () => {
     try {
-      const { data, error } = await supabase
-        .from('workers')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const { data: workerAuth } = await supabase
+        .from('worker_auth')
+        .select('worker_id')
+        .eq('user_id', user!.id)
+        .maybeSingle();
 
-      if (error) throw error;
-      setWorkers(data || []);
+      if (workerAuth?.worker_id) {
+        setWorkerId(workerAuth.worker_id);
+        
+        const { data: workerData } = await supabase
+          .from('workers')
+          .select('*')
+          .eq('id', workerAuth.worker_id)
+          .single();
+
+        if (workerData) {
+          setWorker(workerData);
+          setFormData({
+            name: workerData.name || '',
+            age: workerData.age?.toString() || '',
+            gender: workerData.gender || '',
+            phone: workerData.phone || '',
+            hasWhatsapp: workerData.has_whatsapp ?? true,
+            workType: workerData.work_type || 'domestic_help',
+            yearsExperience: workerData.years_experience?.toString() || '',
+            languagesSpoken: workerData.languages_spoken || [],
+            preferredAreas: workerData.preferred_areas || [],
+            workingHours: workerData.working_hours || 'full_day',
+            residentialAddress: workerData.residential_address || '',
+          });
+        }
+      }
     } catch (error) {
-      console.error('Error fetching workers:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load workers',
-        variant: 'destructive'
-      });
+      console.error('Error:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleVerify = async (approve: boolean) => {
-    if (!selectedWorker) return;
+  const handleInputChange = (field: string, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
 
-    setProcessing(true);
+  const handleLanguageToggle = (lang: string) => {
+    setFormData(prev => ({
+      ...prev,
+      languagesSpoken: prev.languagesSpoken.includes(lang)
+        ? prev.languagesSpoken.filter(l => l !== lang)
+        : [...prev.languagesSpoken, lang]
+    }));
+  };
+
+  const handleAreaToggle = (area: string) => {
+    setFormData(prev => ({
+      ...prev,
+      preferredAreas: prev.preferredAreas.includes(area)
+        ? prev.preferredAreas.filter(a => a !== area)
+        : [...prev.preferredAreas, area]
+    }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setIdProofFile(file);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!workerId || !formData.name || !formData.phone || !formData.workType) {
+      toast({
+        title: 'Missing Information',
+        description: 'Please fill in all required fields',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setSaving(true);
+
     try {
+      let idProofUrl = worker?.id_proof_url || null;
+
+      // Upload ID proof if provided
+      if (idProofFile) {
+        const fileExt = idProofFile.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('worker-documents')
+          .upload(fileName, idProofFile);
+
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+        } else {
+          idProofUrl = uploadData.path;
+        }
+      }
+
+      // Update worker record
       const { error } = await supabase
         .from('workers')
         .update({
-          status: approve ? 'verified' : 'rejected',
-          verification_notes: verificationNotes,
-          verified_at: new Date().toISOString(),
-          verified_by: user?.id
+          name: formData.name,
+          age: formData.age ? parseInt(formData.age) : null,
+          gender: formData.gender || null,
+          phone: formData.phone,
+          has_whatsapp: formData.hasWhatsapp,
+          work_type: formData.workType,
+          years_experience: formData.yearsExperience ? parseInt(formData.yearsExperience) : 0,
+          languages_spoken: formData.languagesSpoken,
+          preferred_areas: formData.preferredAreas,
+          working_hours: formData.workingHours,
+          residential_address: formData.residentialAddress || null,
+          id_proof_url: idProofUrl,
+          status: 'pending_verification',
+          updated_at: new Date().toISOString()
         })
-        .eq('id', selectedWorker.id);
+        .eq('id', workerId);
 
       if (error) throw error;
 
       toast({
-        title: approve ? 'Worker Verified' : 'Worker Rejected',
-        description: `${selectedWorker.name} has been ${approve ? 'verified' : 'rejected'}.`
+        title: 'Profile Updated!',
+        description: 'Your profile has been submitted for verification.',
       });
 
-      setSelectedWorker(null);
-      setVerificationNotes('');
-      fetchWorkers();
+      // Refresh data
+      fetchWorkerData();
     } catch (error: any) {
-      console.error('Error updating worker:', error);
+      console.error('Error updating profile:', error);
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to update worker status',
+        title: 'Update Failed',
+        description: error.message || 'Something went wrong',
         variant: 'destructive'
       });
     } finally {
-      setProcessing(false);
+      setSaving(false);
     }
   };
 
-  const filteredWorkers = workers.filter(w =>
-    w.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    w.phone.includes(searchQuery)
-  );
+  if (authLoading || loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!user) {
+    return null;
+  }
+
+  // If no worker profile linked yet
+  if (!workerId) {
     return (
       <div className="min-h-screen bg-background">
         <WorkerNavbar />
         <main className="pt-20 section-padding">
-          <div className="container-main text-center">
-            <h1 className="text-2xl font-bold mb-4">Access Restricted</h1>
-            <p className="text-muted-foreground mb-6">
-              This page is for internal team use only. Please login to continue.
-            </p>
-            <Button onClick={() => navigate('/')}>Go Home</Button>
+          <div className="container-main text-center max-w-md mx-auto">
+            <div className="card-elevated p-8">
+              <AlertCircle className="w-16 h-16 text-muted-foreground mx-auto mb-6" />
+              <h1 className="text-2xl font-bold text-foreground mb-2">
+                Profile Not Found
+              </h1>
+              <p className="text-muted-foreground mb-6">
+                Please start by creating your worker profile from the auth page.
+              </p>
+              <Button onClick={() => navigate('/for-workers/auth')} className="w-full">
+                Get Started
+              </Button>
+            </div>
           </div>
         </main>
         <Footer />
       </div>
     );
   }
+
+  const currentStatus = statusConfig[worker?.status || 'pending_verification'];
+  const StatusIcon = currentStatus.icon;
 
   return (
     <div className="min-h-screen bg-background">
@@ -174,257 +324,291 @@ export default function WorkerVerification() {
         <div className="container-main px-4 md:px-8">
           <Button 
             variant="ghost" 
-            onClick={() => navigate('/for-workers')}
+            onClick={() => navigate('/for-workers/dashboard')}
             className="mb-6"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Worker Portal
+            Back to Dashboard
           </Button>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
+            className="max-w-3xl mx-auto"
           >
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-              <div>
-                <span className="inline-block px-3 py-1 bg-destructive/10 text-destructive rounded-full text-sm font-medium mb-2">
-                  Admin Only
-                </span>
-                <h1 className="text-3xl font-bold text-foreground">
-                  Worker Verification
-                </h1>
-              </div>
-              
-              <div className="relative w-full md:w-80">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by name or phone..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
+            {/* Status Banner */}
+            <div className={`rounded-xl p-4 mb-8 ${currentStatus.color}`}>
+              <div className="flex items-center gap-3">
+                <StatusIcon className="w-6 h-6" />
+                <div>
+                  <p className="font-semibold">{currentStatus.label}</p>
+                  <p className="text-sm opacity-90">{currentStatus.description}</p>
+                </div>
               </div>
             </div>
 
-            {loading ? (
-              <div className="flex justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
-              </div>
-            ) : (
-              <div className="card-elevated overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Phone</TableHead>
-                      <TableHead>Work Type</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Registered</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredWorkers.map((worker) => (
-                      <TableRow key={worker.id}>
-                        <TableCell className="font-medium">{worker.name}</TableCell>
-                        <TableCell>{worker.phone}</TableCell>
-                        <TableCell>{workTypeLabels[worker.work_type] || worker.work_type}</TableCell>
-                        <TableCell>
-                          <Badge className={statusColors[worker.status] || 'bg-muted'}>
-                            {worker.status.replace('_', ' ')}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {new Date(worker.created_at).toLocaleDateString('en-IN')}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setSelectedWorker(worker)}
-                          >
-                            <Eye className="w-4 h-4 mr-1" />
-                            View
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {filteredWorkers.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                          No workers found
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </motion.div>
-        </div>
-      </main>
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-foreground mb-2">
+                Worker Verification
+              </h1>
+              <p className="text-muted-foreground">
+                Complete your profile to get verified and start receiving work opportunities
+              </p>
+            </div>
 
-      {/* Worker Detail Modal */}
-      <Dialog open={!!selectedWorker} onOpenChange={() => setSelectedWorker(null)}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Worker Details</DialogTitle>
-          </DialogHeader>
-          
-          {selectedWorker && (
-            <div className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-8">
               {/* Basic Info */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-center gap-3">
-                  <User className="w-5 h-5 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Name</p>
-                    <p className="font-medium">{selectedWorker.name}</p>
+              <div className="card-elevated p-6 space-y-6">
+                <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  <User className="w-5 h-5 text-primary" />
+                  Basic Information
+                </h2>
+                
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Full Name *</Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => handleInputChange('name', e.target.value)}
+                      placeholder="Enter full name"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number *</Label>
+                    <Input
+                      id="phone"
+                      value={formData.phone}
+                      onChange={(e) => handleInputChange('phone', e.target.value)}
+                      placeholder="+91 98765 43210"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="age">Age</Label>
+                    <Input
+                      id="age"
+                      type="number"
+                      value={formData.age}
+                      onChange={(e) => handleInputChange('age', e.target.value)}
+                      placeholder="25"
+                      min="18"
+                      max="65"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Gender</Label>
+                    <Select value={formData.gender} onValueChange={(v) => handleInputChange('gender', v)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select gender" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">Male</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
+
                 <div className="flex items-center gap-3">
-                  <Phone className="w-5 h-5 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Phone</p>
-                    <p className="font-medium">{selectedWorker.phone}</p>
-                  </div>
+                  <Checkbox
+                    id="whatsapp"
+                    checked={formData.hasWhatsapp}
+                    onCheckedChange={(checked) => handleInputChange('hasWhatsapp', checked)}
+                  />
+                  <Label htmlFor="whatsapp" className="cursor-pointer">
+                    This phone number has WhatsApp
+                  </Label>
                 </div>
               </div>
 
               {/* Work Details */}
-              <div className="bg-muted/50 rounded-xl p-4 space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Work Type</span>
-                  <span className="font-medium">{workTypeLabels[selectedWorker.work_type]}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Experience</span>
-                  <span className="font-medium">{selectedWorker.years_experience} years</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Languages</span>
-                  <span className="font-medium">{selectedWorker.languages_spoken?.join(', ') || 'N/A'}</span>
-                </div>
-              </div>
+              <div className="card-elevated p-6 space-y-6">
+                <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  <Briefcase className="w-5 h-5 text-secondary" />
+                  Work Details
+                </h2>
+                
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label>Type of Work *</Label>
+                    <Select value={formData.workType} onValueChange={(v) => handleInputChange('workType', v)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select work type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {workTypes.map(type => (
+                          <SelectItem key={type.value} value={type.value}>
+                            {type.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-              {/* Areas */}
-              {selectedWorker.preferred_areas?.length > 0 && (
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2 flex items-center gap-2">
-                    <MapPin className="w-4 h-4" />
-                    Preferred Areas
-                  </p>
+                  <div className="space-y-2">
+                    <Label htmlFor="experience">Years of Experience</Label>
+                    <Input
+                      id="experience"
+                      type="number"
+                      value={formData.yearsExperience}
+                      onChange={(e) => handleInputChange('yearsExperience', e.target.value)}
+                      placeholder="5"
+                      min="0"
+                      max="50"
+                    />
+                  </div>
+
+                  <div className="space-y-2 md:col-span-2">
+                    <Label>Working Hours Preference</Label>
+                    <Select value={formData.workingHours} onValueChange={(v) => handleInputChange('workingHours', v)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {workingHoursOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <Label>Languages Spoken</Label>
                   <div className="flex flex-wrap gap-2">
-                    {selectedWorker.preferred_areas.map((area: string) => (
-                      <Badge key={area} variant="secondary">{area}</Badge>
+                    {languageOptions.map(lang => (
+                      <button
+                        key={lang}
+                        type="button"
+                        onClick={() => handleLanguageToggle(lang)}
+                        className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                          formData.languagesSpoken.includes(lang)
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                        }`}
+                      >
+                        {formData.languagesSpoken.includes(lang) && (
+                          <Check className="w-4 h-4 inline mr-1" />
+                        )}
+                        {lang}
+                      </button>
                     ))}
                   </div>
                 </div>
-              )}
 
-              {/* Address */}
-              {selectedWorker.residential_address && (
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Residential Address</p>
-                  <p className="text-foreground">{selectedWorker.residential_address}</p>
-                </div>
-              )}
-
-              {/* Notes */}
-              {selectedWorker.notes && (
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1 flex items-center gap-2">
-                    <FileText className="w-4 h-4" />
-                    Registration Notes
-                  </p>
-                  <p className="text-foreground bg-muted/50 rounded-lg p-3">{selectedWorker.notes}</p>
-                </div>
-              )}
-
-              {/* ID Proof */}
-              {selectedWorker.id_proof_url && (
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">ID Proof</p>
-                  <Button
-                    variant="outline"
-                    onClick={async () => {
-                      const { data } = await supabase.storage
-                        .from('worker-documents')
-                        .createSignedUrl(selectedWorker.id_proof_url!, 60);
-                      if (data?.signedUrl) {
-                        window.open(data.signedUrl, '_blank');
-                      }
-                    }}
-                  >
-                    <Eye className="w-4 h-4 mr-2" />
-                    View ID Document
-                  </Button>
-                </div>
-              )}
-
-              {/* Verification Section */}
-              {selectedWorker.status === 'pending_verification' && (
-                <div className="border-t border-border pt-6">
-                  <h3 className="font-semibold mb-4">Verification Decision</h3>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm text-muted-foreground mb-2 block">
-                        Verification Notes
-                      </label>
-                      <Textarea
-                        value={verificationNotes}
-                        onChange={(e) => setVerificationNotes(e.target.value)}
-                        placeholder="Add notes about verification..."
-                        rows={3}
-                      />
-                    </div>
-
-                    <div className="flex gap-3">
-                      <Button
-                        onClick={() => handleVerify(true)}
-                        disabled={processing}
-                        className="flex-1 bg-green-600 hover:bg-green-700"
+                <div className="space-y-3">
+                  <Label>Preferred Working Areas</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {areaOptions.map(area => (
+                      <button
+                        key={area}
+                        type="button"
+                        onClick={() => handleAreaToggle(area)}
+                        className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                          formData.preferredAreas.includes(area)
+                            ? 'bg-secondary text-secondary-foreground'
+                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                        }`}
                       >
-                        {processing ? (
-                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                        ) : (
-                          <CheckCircle className="w-4 h-4 mr-2" />
+                        {formData.preferredAreas.includes(area) && (
+                          <Check className="w-4 h-4 inline mr-1" />
                         )}
-                        Approve
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        onClick={() => handleVerify(false)}
-                        disabled={processing}
-                        className="flex-1"
-                      >
-                        {processing ? (
-                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                        ) : (
-                          <XCircle className="w-4 h-4 mr-2" />
-                        )}
-                        Reject
-                      </Button>
-                    </div>
+                        {area}
+                      </button>
+                    ))}
                   </div>
                 </div>
-              )}
+              </div>
 
-              {/* Already verified/rejected */}
-              {selectedWorker.status !== 'pending_verification' && (
-                <div className="border-t border-border pt-4">
-                  <Badge className={statusColors[selectedWorker.status]}>
-                    {selectedWorker.status === 'verified' ? 'Verified' : 
-                     selectedWorker.status === 'rejected' ? 'Rejected' : 
-                     selectedWorker.status.replace('_', ' ')}
-                  </Badge>
+              {/* Documents */}
+              <div className="card-elevated p-6 space-y-6">
+                <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-amber-600" />
+                  Documents & Address
+                </h2>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="address">Residential Address</Label>
+                  <Textarea
+                    id="address"
+                    value={formData.residentialAddress}
+                    onChange={(e) => handleInputChange('residentialAddress', e.target.value)}
+                    placeholder="Enter full address"
+                    rows={3}
+                  />
                 </div>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+
+                <div className="space-y-2">
+                  <Label htmlFor="idproof">ID Proof Upload</Label>
+                  <div className="border-2 border-dashed border-border rounded-xl p-6 text-center">
+                    <input
+                      type="file"
+                      id="idproof"
+                      accept="image/*,.pdf"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                    <label htmlFor="idproof" className="cursor-pointer">
+                      <Upload className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+                      {idProofFile ? (
+                        <p className="text-primary font-medium">{idProofFile.name}</p>
+                      ) : worker?.id_proof_url ? (
+                        <p className="text-green-600 font-medium flex items-center justify-center gap-2">
+                          <CheckCircle className="w-4 h-4" />
+                          Document Uploaded - Click to replace
+                        </p>
+                      ) : (
+                        <>
+                          <p className="text-muted-foreground">
+                            Click to upload Aadhaar, PAN, or Voter ID
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            JPG, PNG or PDF up to 5MB
+                          </p>
+                        </>
+                      )}
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <Button type="submit" size="lg" className="flex-1" disabled={saving}>
+                  {saving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save & Submit for Verification'
+                  )}
+                </Button>
+              </div>
+
+              {/* Support */}
+              <div className="text-center">
+                <Button
+                  type="button"
+                  variant="link"
+                  onClick={() => window.open('https://wa.me/919876543210?text=Hi, I need help with my verification', '_blank')}
+                  className="text-muted-foreground"
+                >
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  Need help? Contact Support
+                </Button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      </main>
 
       <Footer />
     </div>

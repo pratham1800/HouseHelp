@@ -175,28 +175,34 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address: string | null
           avatar_url: string | null
           created_at: string
           full_name: string | null
           id: string
+          location: string | null
           phone: string | null
           updated_at: string
           user_role: string | null
         }
         Insert: {
+          address?: string | null
           avatar_url?: string | null
           created_at?: string
           full_name?: string | null
           id: string
+          location?: string | null
           phone?: string | null
           updated_at?: string
           user_role?: string | null
         }
         Update: {
+          address?: string | null
           avatar_url?: string | null
           created_at?: string
           full_name?: string | null
           id?: string
+          location?: string | null
           phone?: string | null
           updated_at?: string
           user_role?: string | null
@@ -317,18 +323,24 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          migrated_at: string | null
+          migrated_from_owner: boolean | null
           user_id: string
           worker_id: string | null
         }
         Insert: {
           created_at?: string
           id?: string
+          migrated_at?: string | null
+          migrated_from_owner?: boolean | null
           user_id: string
           worker_id?: string | null
         }
         Update: {
           created_at?: string
           id?: string
+          migrated_at?: string | null
+          migrated_from_owner?: boolean | null
           user_id?: string
           worker_id?: string | null
         }

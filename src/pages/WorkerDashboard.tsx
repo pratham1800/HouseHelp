@@ -399,23 +399,37 @@ export default function WorkerDashboard() {
               </div>
             </motion.div>
 
-            {/* Status Card */}
+            {/* Quick Actions */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="lg:col-span-2 card-elevated p-6"
+              className="card-elevated p-6"
             >
+              <h2 className="text-lg font-semibold text-foreground mb-4">
+                {t('needHelp')}
+              </h2>
+              <Button 
+                className="w-full mb-3"
+                onClick={() => window.open('https://wa.me/919876543210', '_blank')}
+              >
+                <MessageCircle className="w-4 h-4 mr-2" />
+                {t('contactSupport')}
+              </Button>
+              <p className="text-xs text-muted-foreground text-center">
+                Available Mon-Sat, 9 AM - 6 PM
+              </p>
+            </motion.div>
 
             {/* Profile Info */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
+              transition={{ delay: 0.4 }}
               className="lg:col-span-3 card-elevated p-6"
             >
               <h2 className="text-lg font-semibold text-foreground mb-6">
-                Your Profile
+                {t('yourProfile')}
               </h2>
 
               <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">

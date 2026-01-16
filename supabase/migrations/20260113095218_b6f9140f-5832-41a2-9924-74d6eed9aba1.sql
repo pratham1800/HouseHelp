@@ -44,12 +44,12 @@ FOR SELECT
 USING (phone IS NOT NULL);
 
 CREATE POLICY "Workers can update their own profile" 
-ON public.profiles 
+ON public.workers 
 FOR UPDATE 
 USING (auth.uid() = id);
 
 CREATE POLICY "Workers can insert their own profile" 
-ON public.profiles 
+ON public.workers 
 FOR INSERT 
 WITH CHECK (auth.uid() = id);
 

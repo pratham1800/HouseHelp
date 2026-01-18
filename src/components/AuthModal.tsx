@@ -121,7 +121,8 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'login' }: AuthModalP
           return;
         }
 
-        const { error } = await signUp(email, password, fullName);
+        // Sign up as 'owner' since this is the owner portal modal
+        const { error } = await signUp(email, password, fullName, 'owner');
         if (error) {
           if (error.message.includes('User already registered')) {
             toast({

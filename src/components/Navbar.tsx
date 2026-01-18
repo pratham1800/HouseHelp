@@ -7,7 +7,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
 import { AuthModal } from '@/components/AuthModal';
 import { UserMenu } from '@/components/UserMenu';
-import { PortalSwitchModal } from '@/components/PortalSwitchModal';
 
 const languages = [
   { code: 'en' as const, label: 'EN' },
@@ -23,9 +22,8 @@ export const Navbar = () => {
   const [showLangDropdown, setShowLangDropdown] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
-  const [showPortalSwitch, setShowPortalSwitch] = useState(false);
 
-  const { user, loading } = useAuth();
+  const { user, loading, signOut } = useAuth();
   const { language, setLanguage, t } = useLanguage();
 
   const navLinks = [
@@ -42,12 +40,13 @@ export const Navbar = () => {
     setIsOpen(false);
   };
 
-  const handleNavClick = (href: string, isPortalSwitch?: boolean) => {
+  const handleNavClick = async (href: string, isPortalSwitch?: boolean) => {
     setIsOpen(false);
     
-    // Check if user is logged in and trying to switch to worker portal
+    // If switching portals and logged in, log out first then navigate
     if (isPortalSwitch && href === '/for-workers' && user) {
-      setShowPortalSwitch(true);
+      await signOut();
+      navigate('/for-workers');
       return;
     }
     
@@ -237,13 +236,6 @@ export const Navbar = () => {
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
         defaultMode={authMode}
-      />
-
-      {/* Portal Switch Modal */}
-      <PortalSwitchModal
-        isOpen={showPortalSwitch}
-        onClose={() => setShowPortalSwitch(false)}
-        targetPortal="worker"
       />
     </>
   );

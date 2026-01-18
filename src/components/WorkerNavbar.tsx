@@ -5,7 +5,6 @@ import { Menu, X, ChevronDown, Briefcase, User, LogOut, LayoutDashboard, Gift, H
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
-import { PortalSwitchModal } from '@/components/PortalSwitchModal';
 
 const languages = [
   { code: 'en' as const, label: 'EN' },
@@ -20,7 +19,6 @@ export const WorkerNavbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [showLangDropdown, setShowLangDropdown] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
-  const [showPortalSwitch, setShowPortalSwitch] = useState(false);
 
   const { user, signOut } = useAuth();
   const { language, setLanguage, t } = useLanguage();
@@ -44,13 +42,13 @@ export const WorkerNavbar = () => {
     navigate(href);
   };
 
-  const handleOwnerPortalClick = () => {
+  const handleOwnerPortalClick = async () => {
     setIsOpen(false);
+    // If logged in, sign out first then navigate to owner portal
     if (user) {
-      setShowPortalSwitch(true);
-    } else {
-      navigate('/');
+      await signOut();
     }
+    navigate('/');
   };
 
   return (
@@ -379,13 +377,6 @@ export const WorkerNavbar = () => {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Portal Switch Modal */}
-      <PortalSwitchModal
-        isOpen={showPortalSwitch}
-        onClose={() => setShowPortalSwitch(false)}
-        targetPortal="owner"
-      />
     </motion.nav>
   );
 };

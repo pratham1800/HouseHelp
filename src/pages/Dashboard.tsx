@@ -183,14 +183,29 @@ const Dashboard = () => {
       }
       
       // Parse sub_services from JSON and attach worker data
-      const parsedBookings = (data || []).map(booking => ({
-        ...booking,
-        sub_services: typeof booking.sub_services === 'string' 
-          ? JSON.parse(booking.sub_services) 
-          : booking.sub_services || [],
-        worker: booking.workers as Worker | undefined,
-        avg_rating: booking.assigned_worker_id ? ratingsMap[booking.assigned_worker_id] : undefined
-      }));
+      const parsedBookings = (data || []).map(booking => {
+        let subServices: { id: string; name: string }[] = [];
+        try {
+          if (typeof booking.sub_services === 'string') {
+            subServices = JSON.parse(booking.sub_services);
+          } else if (Array.isArray(booking.sub_services)) {
+            subServices = booking.sub_services as { id: string; name: string }[];
+          } else if (booking.sub_services && typeof booking.sub_services === 'object') {
+            // Handle case where sub_services is an object but not an array
+            subServices = [];
+          }
+        } catch (e) {
+          console.error('Error parsing sub_services:', e);
+          subServices = [];
+        }
+        
+        return {
+          ...booking,
+          sub_services: subServices,
+          worker: booking.workers as Worker | undefined,
+          avg_rating: booking.assigned_worker_id ? ratingsMap[booking.assigned_worker_id] : undefined
+        };
+      });
       
       setBookings(parsedBookings);
     } catch (error) {

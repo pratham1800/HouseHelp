@@ -26,21 +26,21 @@ interface Worker {
   match_score?: number;
 }
 
-// Map service IDs to work types
+// Map service IDs to work types (matching the worker registration form values)
 const serviceToWorkType: Record<string, string> = {
-  'cleaning': 'Domestic Help',
-  'cooking': 'Cooking',
-  'driver': 'Driving',
-  'gardening': 'Gardening',
+  'cleaning': 'domestic_help',
+  'cooking': 'cooking',
+  'driver': 'driving',
+  'gardening': 'gardening',
 };
 
-// Map preferred time to working hours
+// Map preferred time to working hours (matching the worker registration form values)
 const timeToHours: Record<string, string[]> = {
-  'morning': ['Morning', 'Full Day', 'Flexible'],
-  'midday': ['Morning', 'Full Day', 'Flexible'],
-  'afternoon': ['Evening', 'Full Day', 'Flexible'],
-  'evening': ['Evening', 'Full Day', 'Flexible'],
-  'flexible': ['Morning', 'Evening', 'Full Day', 'Flexible'],
+  'morning': ['morning', 'full_day'],
+  'midday': ['morning', 'full_day'],
+  'afternoon': ['evening', 'full_day'],
+  'evening': ['evening', 'full_day'],
+  'flexible': ['morning', 'evening', 'full_day'],
 };
 
 // Extract city/location from address
@@ -159,11 +159,11 @@ Deno.serve(async (req) => {
     console.log('Service type:', serviceType, 'Preferred time:', preferredTime, 'Address:', address);
     console.log('Extracted locations from address:', extractLocation(address));
 
-    // Get all verified workers
+    // Get all verified workers (status can be 'verified' or 'Verified')
     const { data: workers, error: workersError } = await supabase
       .from('workers')
       .select('*')
-      .eq('status', 'Verified')
+      .or('status.eq.verified,status.eq.Verified')
       .is('assigned_customer_id', null); // Only unassigned workers
 
     if (workersError) {

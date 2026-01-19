@@ -141,7 +141,7 @@ export default function WorkerRegistration() {
       }
 
       // Insert worker record
-      const { error } = await supabase
+      const { data: workerData, error: workerError } = await supabase
         .from('workers')
         .insert({
           name: formData.name,
@@ -158,31 +158,32 @@ export default function WorkerRegistration() {
           residential_address: formData.residentialAddress || null,
           notes: formData.notes || null,
           status: 'pending_verification'
+        })
+        .select('id')
+        .single();
+
+      if (workerError) throw workerError;
+
+      // Create worker_auth entry to link user to worker profile
+      const { error: authError } = await supabase
+        .from('worker_auth')
+        .insert({
+          user_id: user.id,
+          worker_id: workerData.id
         });
 
-      if (error) throw error;
+      if (authError) {
+        console.error('Error creating worker_auth link:', authError);
+        // Worker was created but linking failed - still show success but log the error
+      }
 
       toast({
         title: 'Worker Registered!',
-        description: 'The worker has been added and is pending verification.',
+        description: 'Your profile has been created and is pending verification.',
       });
 
-      // Reset form
-      setFormData({
-        name: '',
-        age: '',
-        gender: '',
-        phone: '',
-        hasWhatsapp: true,
-        workType: '',
-        yearsExperience: '',
-        languagesSpoken: [],
-        preferredAreas: [],
-        workingHours: 'full_day',
-        residentialAddress: '',
-        notes: '',
-      });
-      setIdProofFile(null);
+      // Redirect to worker dashboard
+      navigate('/for-workers/dashboard');
 
     } catch (error: any) {
       console.error('Error registering worker:', error);

@@ -316,6 +316,16 @@ export default function WorkerDashboard() {
                   <StatusIcon className="w-4 h-4" />
                   <span className="text-sm font-medium">{status.label}</span>
                 </div>
+                
+                {/* View Verification Details Button */}
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate('/for-workers/verification')}
+                  className="mt-4 w-full"
+                >
+                  <User className="w-4 h-4 mr-2" />
+                  View Verification Details
+                </Button>
               </div>
             </motion.div>
 

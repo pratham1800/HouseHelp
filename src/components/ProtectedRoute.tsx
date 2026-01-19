@@ -35,10 +35,16 @@ export const ProtectedRoute = ({
     return <Navigate to={authPath} state={{ from: location }} replace />;
   }
 
+  // Determine effective role: if no role in DB, default based on route context
+  // Users who signed up via main portal default to 'owner'
+  // Users who signed up via worker portal default to 'worker'
+  const effectiveRole: AppRole = role || 
+    (location.pathname.startsWith('/for-workers') ? 'worker' : 'owner');
+
   // If a specific role is required, check it
-  if (requiredRole && role !== requiredRole) {
-    // Redirect based on user's actual role
-    const destination = redirectTo || (role === 'worker' ? '/for-workers/dashboard' : '/dashboard');
+  if (requiredRole && effectiveRole !== requiredRole) {
+    // Redirect based on user's effective role
+    const destination = redirectTo || (effectiveRole === 'worker' ? '/for-workers/dashboard' : '/dashboard');
     return <Navigate to={destination} replace />;
   }
 

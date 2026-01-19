@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { LanguageProvider } from "@/hooks/useLanguage";
 import { ChatBot } from "@/components/ChatBot";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Services from "./pages/Services";
 import Dashboard from "./pages/Dashboard";
@@ -35,24 +36,72 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
+              {/* Public routes */}
               <Route path="/" element={<Index />} />
               <Route path="/services" element={<Services />} />
               <Route path="/services/:serviceId" element={<Services />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/management" element={<Management />} />
-              <Route path="/profile" element={<Profile />} />
+              
+              {/* Owner protected routes */}
+              <Route path="/dashboard" element={
+                <ProtectedRoute requiredRole="owner">
+                  <Dashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/management" element={
+                <ProtectedRoute requiredRole="owner">
+                  <Management />
+                </ProtectedRoute>
+              } />
+              <Route path="/profile" element={
+                <ProtectedRoute requiredRole="owner">
+                  <Profile />
+                </ProtectedRoute>
+              } />
+              
+              {/* Worker public routes */}
               <Route path="/for-workers" element={<WorkerLanding />} />
               <Route path="/for-workers/auth" element={<WorkerAuth />} />
               <Route path="/for-workers/benefits" element={<WorkerBenefits />} />
-              <Route path="/for-workers/register" element={<WorkerRegistration />} />
-              <Route path="/for-workers/dashboard" element={<WorkerDashboard />} />
-              <Route path="/for-workers/verification" element={<WorkerVerification />} />
-              <Route path="/for-workers/profile" element={<WorkerProfile />} />
-              <Route path="/for-workers/bookings" element={<WorkerBookings />} />
-              <Route path="/for-workers/earnings" element={<WorkerEarnings />} />
               <Route path="/for-workers/how-it-works" element={<WorkerHowItWorks />} />
-              <Route path="/for-workers/requests" element={<WorkerRequests />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              
+              {/* Worker protected routes */}
+              <Route path="/for-workers/register" element={
+                <ProtectedRoute requiredRole="worker">
+                  <WorkerRegistration />
+                </ProtectedRoute>
+              } />
+              <Route path="/for-workers/dashboard" element={
+                <ProtectedRoute requiredRole="worker">
+                  <WorkerDashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/for-workers/verification" element={
+                <ProtectedRoute requiredRole="worker">
+                  <WorkerVerification />
+                </ProtectedRoute>
+              } />
+              <Route path="/for-workers/profile" element={
+                <ProtectedRoute requiredRole="worker">
+                  <WorkerProfile />
+                </ProtectedRoute>
+              } />
+              <Route path="/for-workers/bookings" element={
+                <ProtectedRoute requiredRole="worker">
+                  <WorkerBookings />
+                </ProtectedRoute>
+              } />
+              <Route path="/for-workers/earnings" element={
+                <ProtectedRoute requiredRole="worker">
+                  <WorkerEarnings />
+                </ProtectedRoute>
+              } />
+              <Route path="/for-workers/requests" element={
+                <ProtectedRoute requiredRole="worker">
+                  <WorkerRequests />
+                </ProtectedRoute>
+              } />
+              
+              {/* Catch-all */}
               <Route path="*" element={<NotFound />} />
             </Routes>
             <ChatBot />

@@ -64,11 +64,14 @@ export const WorkerMatchModal = ({
 
       if (workerError) throw workerError;
 
-      // Update booking status
+      // Update booking status and assign worker
       const { error: bookingError } = await supabase
         .from('bookings')
         .update({
           status: 'confirmed',
+          assigned_worker_id: worker.id,
+          call_scheduled_at: scheduledCallDate,
+          call_status: 'scheduled',
         })
         .eq('id', bookingId);
 

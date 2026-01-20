@@ -481,6 +481,7 @@ export type Database = {
           verification_notes: string | null
           verified_at: string | null
           verified_by: string | null
+          work_subcategories: string[] | null
           work_type: string
           working_hours: string | null
           years_experience: number | null
@@ -508,6 +509,7 @@ export type Database = {
           verification_notes?: string | null
           verified_at?: string | null
           verified_by?: string | null
+          work_subcategories?: string[] | null
           work_type: string
           working_hours?: string | null
           years_experience?: number | null
@@ -535,6 +537,7 @@ export type Database = {
           verification_notes?: string | null
           verified_at?: string | null
           verified_by?: string | null
+          work_subcategories?: string[] | null
           work_type?: string
           working_hours?: string | null
           years_experience?: number | null

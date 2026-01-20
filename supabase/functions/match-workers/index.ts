@@ -10,6 +10,7 @@ interface MatchRequest {
   serviceType: string;
   preferredTime: string;
   address: string;
+  subServices?: { id: string; name: string }[];
 }
 
 interface Worker {
@@ -17,6 +18,7 @@ interface Worker {
   name: string;
   phone: string;
   work_type: string;
+  work_subcategories: string[] | null;
   years_experience: number | null;
   languages_spoken: string[] | null;
   preferred_areas: string[] | null;
@@ -32,6 +34,16 @@ const serviceToWorkType: Record<string, string> = {
   'cooking': 'cooking',
   'driver': 'driving',
   'gardening': 'gardening',
+};
+
+// Map booking sub-service IDs to worker subcategory values
+const bookingToWorkerSubcategoryMap: Record<string, string> = {
+  'brooming': 'brooming_dusting',
+  'laundry': 'laundry_ironing',
+  'mopping': 'mopping_floor',
+  'dishwashing': 'dish_washing',
+  'bathroom': 'bathroom_cleaning',
+  'full-house': 'full_house',
 };
 
 // Map preferred time to working hours (matching the worker registration form values)
@@ -66,26 +78,55 @@ function extractLocation(address: string): string[] {
   return matchedLocations;
 }
 
-function calculateMatchScore(worker: Worker, serviceType: string, preferredTime: string, address: string): number {
+function calculateMatchScore(
+  worker: Worker, 
+  serviceType: string, 
+  preferredTime: string, 
+  address: string,
+  subServices?: { id: string; name: string }[]
+): number {
   let score = 0;
   const maxScore = 100;
 
-  // 1. Service Type Match (40 points)
+  // 1. Service Type Match (30 points - reduced to make room for subcategories)
   const requiredWorkType = serviceToWorkType[serviceType];
   if (worker.work_type === requiredWorkType) {
-    score += 40;
+    score += 30;
   }
 
-  // 2. Availability/Working Hours Match (20 points)
+  // 2. Subcategory Match (20 points) - NEW
+  if (subServices && subServices.length > 0 && worker.work_subcategories && worker.work_subcategories.length > 0) {
+    // Map booking sub-service IDs to worker subcategory values
+    const requiredSubcategories = subServices.map(s => bookingToWorkerSubcategoryMap[s.id] || s.id);
+    
+    // Count how many required subcategories the worker can do
+    const matchedSubcategories = requiredSubcategories.filter(
+      sub => worker.work_subcategories!.includes(sub)
+    );
+    
+    if (matchedSubcategories.length === requiredSubcategories.length) {
+      // Worker can do ALL requested subcategories
+      score += 20;
+    } else if (matchedSubcategories.length > 0) {
+      // Partial match - proportional score
+      score += Math.round((matchedSubcategories.length / requiredSubcategories.length) * 15);
+    }
+    // No match = 0 points
+  } else if (!subServices || subServices.length === 0) {
+    // If no subcategories requested, give partial points
+    score += 10;
+  }
+
+  // 3. Availability/Working Hours Match (15 points - adjusted)
   const acceptableHours = timeToHours[preferredTime] || timeToHours['flexible'];
   if (worker.working_hours && acceptableHours.includes(worker.working_hours)) {
-    score += 20;
+    score += 15;
   } else if (!worker.working_hours) {
     // If no preference set, give partial score
-    score += 8;
+    score += 6;
   }
 
-  // 3. Location/Area Match (30 points) - PRIORITIZE MANUAL LOCATION INPUT
+  // 4. Location/Area Match (25 points) - PRIORITIZE MANUAL LOCATION INPUT
   const inputLocations = extractLocation(address);
   
   if (inputLocations.length > 0 && worker.preferred_areas && worker.preferred_areas.length > 0) {
@@ -98,7 +139,7 @@ function calculateMatchScore(worker: Worker, serviceType: string, preferredTime:
     );
     
     if (hasDirectMatch) {
-      score += 30;
+      score += 25;
     } else {
       // Check if address string contains any worker preferred area
       const addressLower = address.toLowerCase();
@@ -106,7 +147,7 @@ function calculateMatchScore(worker: Worker, serviceType: string, preferredTime:
         addressLower.includes(area.toLowerCase())
       );
       if (areaMatch) {
-        score += 25;
+        score += 20;
       } else {
         // No location match - significant penalty
         score += 0;
@@ -119,16 +160,16 @@ function calculateMatchScore(worker: Worker, serviceType: string, preferredTime:
       addressLower.includes(area.toLowerCase())
     );
     if (areaMatch) {
-      score += 25;
+      score += 20;
     } else {
       score += 5;
     }
   } else {
     // Workers with no area preference get partial score (more flexible)
-    score += 10;
+    score += 8;
   }
 
-  // 4. Experience Bonus (10 points)
+  // 5. Experience Bonus (10 points)
   if (worker.years_experience) {
     if (worker.years_experience >= 5) {
       score += 10;
@@ -153,10 +194,11 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { bookingId, serviceType, preferredTime, address }: MatchRequest = await req.json();
+    const { bookingId, serviceType, preferredTime, address, subServices }: MatchRequest = await req.json();
 
     console.log('Matching workers for booking:', bookingId);
     console.log('Service type:', serviceType, 'Preferred time:', preferredTime, 'Address:', address);
+    console.log('Sub-services requested:', subServices);
     console.log('Extracted locations from address:', extractLocation(address));
 
     // Get all verified workers (status can be 'verified' or 'Verified')
@@ -187,7 +229,7 @@ Deno.serve(async (req) => {
     // Calculate match scores for all workers
     const workersWithScores = workers.map(worker => ({
       ...worker,
-      match_score: calculateMatchScore(worker, serviceType, preferredTime, address),
+      match_score: calculateMatchScore(worker, serviceType, preferredTime, address, subServices),
     }));
 
     // Sort by match score and get top 5
@@ -200,6 +242,7 @@ Deno.serve(async (req) => {
         name: worker.name,
         phone: worker.phone,
         work_type: worker.work_type,
+        work_subcategories: worker.work_subcategories,
         years_experience: worker.years_experience,
         languages_spoken: worker.languages_spoken,
         preferred_areas: worker.preferred_areas,
@@ -209,6 +252,11 @@ Deno.serve(async (req) => {
       }));
 
     console.log(`Returning ${topWorkers.length} matched workers`);
+    console.log('Top workers with subcategories:', topWorkers.map(w => ({ 
+      name: w.name, 
+      subcategories: w.work_subcategories,
+      score: w.match_score 
+    })));
 
     return new Response(
       JSON.stringify({ 

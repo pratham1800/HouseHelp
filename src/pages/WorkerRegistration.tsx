@@ -24,6 +24,7 @@ import { Footer } from '@/components/Footer';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { getSubcategoriesForWorkType, getSubcategoryLabel } from '@/data/workerSubcategories';
 
 const workTypes = [
   { value: 'domestic_help', label: 'Domestic Help (घरेलू सहायता)' },
@@ -61,6 +62,7 @@ export default function WorkerRegistration() {
     phone: '',
     hasWhatsapp: true,
     workType: '',
+    workSubcategories: [] as string[],
     yearsExperience: '',
     languagesSpoken: [] as string[],
     preferredAreas: [] as string[],
@@ -70,7 +72,13 @@ export default function WorkerRegistration() {
   });
 
   const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => {
+      // Clear subcategories when work type changes
+      if (field === 'workType' && value !== prev.workType) {
+        return { ...prev, [field]: value, workSubcategories: [] };
+      }
+      return { ...prev, [field]: value };
+    });
   };
 
   const handleLanguageToggle = (lang: string) => {
@@ -88,6 +96,15 @@ export default function WorkerRegistration() {
       preferredAreas: prev.preferredAreas.includes(area)
         ? prev.preferredAreas.filter(a => a !== area)
         : [...prev.preferredAreas, area]
+    }));
+  };
+
+  const handleSubcategoryToggle = (subcategory: string) => {
+    setFormData(prev => ({
+      ...prev,
+      workSubcategories: prev.workSubcategories.includes(subcategory)
+        ? prev.workSubcategories.filter(s => s !== subcategory)
+        : [...prev.workSubcategories, subcategory]
     }));
   };
 
@@ -153,6 +170,7 @@ export default function WorkerRegistration() {
           phone: formData.phone,
           has_whatsapp: formData.hasWhatsapp,
           work_type: formData.workType,
+          work_subcategories: formData.workSubcategories,
           years_experience: formData.yearsExperience ? parseInt(formData.yearsExperience) : 0,
           languages_spoken: formData.languagesSpoken,
           preferred_areas: formData.preferredAreas,
@@ -363,6 +381,35 @@ export default function WorkerRegistration() {
                     </Select>
                   </div>
                 </div>
+
+                {/* Subcategories based on work type */}
+                {(formData.workType === 'domestic_help' || formData.workType === 'cooking') && (
+                  <div className="space-y-3">
+                    <Label>{getSubcategoryLabel(formData.workType)} *</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Select all that apply. You can choose multiple options.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {getSubcategoriesForWorkType(formData.workType).map(subcategory => (
+                        <button
+                          key={subcategory.value}
+                          type="button"
+                          onClick={() => handleSubcategoryToggle(subcategory.value)}
+                          className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                            formData.workSubcategories.includes(subcategory.value)
+                              ? 'bg-secondary text-secondary-foreground'
+                              : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                          }`}
+                        >
+                          {formData.workSubcategories.includes(subcategory.value) && (
+                            <Check className="w-4 h-4 inline mr-1" />
+                          )}
+                          {subcategory.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-3">
                   <Label>Languages Spoken</Label>

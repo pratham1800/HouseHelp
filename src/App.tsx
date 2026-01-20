@@ -22,7 +22,6 @@ import WorkerProfile from "./pages/WorkerProfile";
 import WorkerBookings from "./pages/WorkerBookings";
 import WorkerEarnings from "./pages/WorkerEarnings";
 import WorkerHowItWorks from "./pages/WorkerHowItWorks";
-import WorkerRequests from "./pages/WorkerRequests";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -93,11 +92,6 @@ const App = () => (
               <Route path="/for-workers/earnings" element={
                 <ProtectedRoute requiredRole="worker">
                   <WorkerEarnings />
-                </ProtectedRoute>
-              } />
-              <Route path="/for-workers/requests" element={
-                <ProtectedRoute requiredRole="worker">
-                  <WorkerRequests />
                 </ProtectedRoute>
               } />
               

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ChevronDown, Briefcase, User, LogOut, LayoutDashboard, Gift, HelpCircle, UserCircle, IndianRupee, FileText } from 'lucide-react';
+import { Menu, X, ChevronDown, Briefcase, User, LogOut, LayoutDashboard, Gift, HelpCircle, UserCircle, IndianRupee } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
@@ -213,16 +213,6 @@ export const WorkerNavbar = () => {
                         </button>
                         <button
                           onClick={() => {
-                            navigate('/for-workers/requests');
-                            setShowUserDropdown(false);
-                          }}
-                          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-left"
-                        >
-                          <FileText className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-sm text-foreground">{language === 'hi' ? 'कार्य अनुरोध' : language === 'kn' ? 'ಕೆಲಸದ ವಿನಂತಿಗಳು' : language === 'mr' ? 'काम विनंत्या' : 'Work Requests'}</span>
-                        </button>
-                        <button
-                          onClick={() => {
                             handleSignOut();
                             setShowUserDropdown(false);
                           }}
@@ -309,16 +299,6 @@ export const WorkerNavbar = () => {
                   >
                     <IndianRupee className="w-5 h-5" />
                     {t('myEarnings')}
-                  </button>
-                  <button
-                    onClick={() => {
-                      navigate('/for-workers/requests');
-                      setIsOpen(false);
-                    }}
-                    className="flex items-center gap-3 w-full text-left py-2 font-medium text-foreground hover:text-primary"
-                  >
-                    <FileText className="w-5 h-5" />
-                    {language === 'hi' ? 'कार्य अनुरोध' : language === 'kn' ? 'ಕೆಲಸದ ವಿನಂತಿಗಳು' : language === 'mr' ? 'काम विनंत्या' : 'Work Requests'}
                   </button>
                 </>
               )}

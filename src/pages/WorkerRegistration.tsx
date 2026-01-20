@@ -160,7 +160,7 @@ export default function WorkerRegistration() {
           id_proof_url: idProofUrl,
           residential_address: formData.residentialAddress || null,
           notes: formData.notes || null,
-          status: 'pending_verification'
+          status: 'verified'
         });
 
       if (workerError) throw workerError;
@@ -177,7 +177,7 @@ export default function WorkerRegistration() {
 
       toast({
         title: 'Worker Registered!',
-        description: 'Your profile has been created and is pending verification.',
+        description: 'Your profile has been created and verified. You can now start receiving bookings!',
       });
 
       // Redirect to worker dashboard

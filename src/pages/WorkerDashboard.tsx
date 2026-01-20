@@ -62,8 +62,8 @@ const statusConfig: Record<string, { label: string; labelHi: string; color: stri
     icon: AlertCircle
   },
   verified: {
-    label: 'Verified - Awaiting Match',
-    labelHi: 'सत्यापित - मिलान की प्रतीक्षा',
+    label: 'Verified',
+    labelHi: 'सत्यापित',
     color: 'bg-blue-100 text-blue-700',
     icon: CheckCircle2
   },

@@ -255,6 +255,7 @@ export const RequirementForm = ({
             serviceType: service.id,
             preferredTime: formData.preferredTime,
             address: formData.address,
+            subServices: selectedSubServices.map(s => ({ id: s.id, name: s.name })),
           },
         });
 

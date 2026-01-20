@@ -12,6 +12,7 @@ import Services from "./pages/Services";
 import Dashboard from "./pages/Dashboard";
 import Management from "./pages/Management";
 import Profile from "./pages/Profile";
+import MyEmployees from "./pages/MyEmployees";
 import WorkerLanding from "./pages/WorkerLanding";
 import WorkerBenefits from "./pages/WorkerBenefits";
 import WorkerRegistration from "./pages/WorkerRegistration";
@@ -54,6 +55,11 @@ const App = () => (
               <Route path="/profile" element={
                 <ProtectedRoute requiredRole="owner">
                   <Profile />
+                </ProtectedRoute>
+              } />
+              <Route path="/employees" element={
+                <ProtectedRoute requiredRole="owner">
+                  <MyEmployees />
                 </ProtectedRoute>
               } />
               

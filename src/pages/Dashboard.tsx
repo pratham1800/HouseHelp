@@ -18,7 +18,8 @@ import {
   Crown,
   Sparkles,
   ArrowUpRight,
-  XCircle
+  XCircle,
+  Users
 } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
@@ -272,6 +273,11 @@ const Dashboard = () => {
                   <Plus className="w-4 h-4" />
                   <span className="hidden sm:inline">New Booking</span>
                   <span className="sm:hidden">Book</span>
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => navigate('/employees')} className="gap-2">
+                  <Users className="w-4 h-4" />
+                  <span className="hidden sm:inline">My Employees</span>
+                  <span className="sm:hidden">Employees</span>
                 </Button>
                 <Button variant="ghost" size="icon" onClick={handleSignOut}>
                   <LogOut className="w-5 h-5" />

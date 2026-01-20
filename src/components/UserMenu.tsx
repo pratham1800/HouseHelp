@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, LogOut, ChevronDown, LayoutDashboard, UserCircle } from 'lucide-react';
+import { User, LogOut, ChevronDown, LayoutDashboard, UserCircle, Users } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 export const UserMenu = () => {
@@ -79,6 +79,13 @@ export const UserMenu = () => {
                 >
                   <LayoutDashboard className="w-4 h-4 text-muted-foreground" />
                   <span className="text-sm text-foreground">My Bookings</span>
+                </button>
+                <button
+                  onClick={() => handleNavigate('/employees')}
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-left"
+                >
+                  <Users className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm text-foreground">My Employees</span>
                 </button>
                 <button
                   onClick={handleSignOut}

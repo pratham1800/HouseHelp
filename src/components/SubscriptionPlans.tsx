@@ -8,38 +8,82 @@ import { AuthModal } from './AuthModal';
 
 const plans = [
   {
-    name: 'Standard',
-    price: 499,
-    description: 'Perfect for getting started',
+    name: 'Light',
+    price: 299,
+    description: 'Perfect for single worker management',
     features: [
-      'Verified worker matching',
-      '7-day free trial period',
+      '1 active worker management',
+      'Worker verification & background check',
+      '7-day trial period',
+      'Up to 2 replacements per year',
       'Basic customer support',
-      'Monthly billing',
+      'Worker attendance dashboard',
     ],
     notIncluded: [
-      'Backup worker on leave',
-      'Priority matching',
-      'Dedicated support manager',
+      'Multiple workers',
+      'Performance reports',
+      'Substitute worker on leave',
     ],
     popular: false,
     buttonVariant: 'outline' as const,
   },
   {
-    name: 'Premium',
-    price: 999,
-    description: 'Best value for families',
+    name: 'Standard',
+    price: 499,
+    description: 'Ideal for managing 2 workers',
     features: [
-      'Everything in Standard',
-      'Backup worker when main is on leave',
-      'Priority worker matching',
-      'Dedicated support manager',
-      '24/7 emergency support',
-      'Free replacement guarantee',
+      'Up to 2 active workers',
+      'Worker verification & background check',
+      '7-day trial period',
+      'Up to 2 replacements per year',
+      'Basic customer support',
+      'Worker attendance dashboard',
+      'Monthly performance reports',
     ],
-    notIncluded: [],
+    notIncluded: [
+      'Substitute worker on leave',
+      'More than 2 workers',
+    ],
+    popular: false,
+    buttonVariant: 'outline' as const,
+  },
+  {
+    name: 'Standard+',
+    price: 899,
+    description: 'Enhanced support with backup workers',
+    features: [
+      'Up to 2 active workers',
+      'Worker verification & background check',
+      '7-day trial period',
+      'Up to 2 replacements per year',
+      'Basic customer support',
+      'Worker attendance dashboard',
+      'Monthly performance reports',
+      'Substitute worker when maid is on leave',
+    ],
+    notIncluded: [
+      'More than 2 workers',
+    ],
     popular: true,
     buttonVariant: 'hero' as const,
+  },
+  {
+    name: 'Premium',
+    price: 1299,
+    description: 'Complete solution for larger households',
+    features: [
+      'Up to 3 active workers',
+      'Worker verification & background check',
+      '7-day trial period',
+      'Up to 2 replacements per year',
+      'Basic customer support',
+      'Worker attendance dashboard',
+      'Monthly performance reports',
+      'Substitute worker when maid is on leave',
+    ],
+    notIncluded: [],
+    popular: false,
+    buttonVariant: 'outline' as const,
   },
 ];
 
@@ -137,7 +181,7 @@ export const SubscriptionPlans = () => {
         </motion.div>
 
         {/* Plans Grid */}
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
           {plans.map((plan, index) => (
             <motion.div
               key={plan.name}
@@ -145,7 +189,7 @@ export const SubscriptionPlans = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.15 }}
-              className={`relative rounded-3xl p-8 ${
+              className={`relative rounded-3xl p-8 flex flex-col ${
                 plan.popular
                   ? 'bg-gradient-to-br from-primary/5 via-card to-secondary/5 border-2 border-primary/20 shadow-elevated'
                   : 'bg-card shadow-card'
@@ -183,7 +227,7 @@ export const SubscriptionPlans = () => {
               </div>
 
               {/* Features */}
-              <div className="space-y-4 mb-8">
+              <div className="space-y-4 mb-8 flex-grow">
                 {plan.features.map((feature) => (
                   <div key={feature} className="flex items-start gap-3">
                     <div className="w-5 h-5 rounded-full bg-success/10 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -203,33 +247,33 @@ export const SubscriptionPlans = () => {
               </div>
 
               {/* CTA */}
-              <Button 
-                variant={plan.buttonVariant} 
-                size="lg" 
-                className="w-full"
-                disabled={subscribing || isCurrentPlan(plan.name)}
-                onClick={() => handleSubscribe(plan.name, plan.price)}
-              >
-                {subscribing ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Processing...
-                  </>
-                ) : isCurrentPlan(plan.name) ? (
-                  <>
-                    <Check className="w-4 h-4 mr-2" />
-                    Current Plan
-                  </>
-                ) : subscription ? (
-                  `Switch to ${plan.name}`
-                ) : (
-                  plan.popular ? 'Get Premium' : 'Get Started'
-                )}
-              </Button>
+              <div className="mt-auto">
+                <Button 
+                  variant={plan.buttonVariant} 
+                  size="lg" 
+                  className="w-full"
+                  disabled={subscribing || isCurrentPlan(plan.name)}
+                  onClick={() => handleSubscribe(plan.name, plan.price)}
+                >
+                  {subscribing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Processing...
+                    </>
+                  ) : isCurrentPlan(plan.name) ? (
+                    <>
+                      <Check className="w-4 h-4 mr-2" />
+                      Current Plan
+                    </>
+                  ) : subscription ? (
+                    `Switch to ${plan.name}`
+                  ) : (
+                    plan.popular ? `Get ${plan.name}` : `Get ${plan.name}`
+                  )}
+                </Button>
 
-              {/* Premium Extras */}
-              {plan.popular && (
-                <div className="flex items-center justify-center gap-4 mt-6 pt-6 border-t border-border">
+                {/* Premium Extras - Always rendered for consistent spacing */}
+                <div className={`flex items-center justify-center gap-4 mt-6 pt-6 border-t border-border ${(plan.popular || plan.name === 'Premium') ? '' : 'invisible'}`}>
                   <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                     <Shield className="w-4 h-4 text-secondary" />
                     <span>Safe</span>
@@ -239,7 +283,7 @@ export const SubscriptionPlans = () => {
                     <span>Backup</span>
                   </div>
                 </div>
-              )}
+              </div>
             </motion.div>
           ))}
         </div>

@@ -36,16 +36,6 @@ const serviceToWorkType: Record<string, string> = {
   'gardening': 'gardening',
 };
 
-// Map booking sub-service IDs to worker subcategory values
-const bookingToWorkerSubcategoryMap: Record<string, string> = {
-  'brooming': 'brooming_dusting',
-  'laundry': 'laundry_ironing',
-  'mopping': 'mopping_floor',
-  'dishwashing': 'dish_washing',
-  'bathroom': 'bathroom_cleaning',
-  'full-house': 'full_house',
-};
-
 // Map preferred time to working hours (matching the worker registration form values)
 const timeToHours: Record<string, string[]> = {
   'morning': ['morning', 'full_day'],
@@ -96,20 +86,20 @@ function calculateMatchScore(
 
   // 2. Subcategory Match (20 points) - NEW
   if (subServices && subServices.length > 0 && worker.work_subcategories && worker.work_subcategories.length > 0) {
-    // Map booking sub-service IDs to worker subcategory values
-    const requiredSubcategories = subServices.map(s => bookingToWorkerSubcategoryMap[s.id] || s.id);
+    // IDs match directly, so use booking sub-service IDs to check worker subcategories
+    const requiredSubcategoryIds = subServices.map(s => s.id);
     
     // Count how many required subcategories the worker can do
-    const matchedSubcategories = requiredSubcategories.filter(
-      sub => worker.work_subcategories!.includes(sub)
+    const matchedSubcategories = requiredSubcategoryIds.filter(
+      subId => worker.work_subcategories!.includes(subId)
     );
     
-    if (matchedSubcategories.length === requiredSubcategories.length) {
+    if (matchedSubcategories.length === requiredSubcategoryIds.length) {
       // Worker can do ALL requested subcategories
       score += 20;
     } else if (matchedSubcategories.length > 0) {
       // Partial match - proportional score
-      score += Math.round((matchedSubcategories.length / requiredSubcategories.length) * 15);
+      score += Math.round((matchedSubcategories.length / requiredSubcategoryIds.length) * 15);
     }
     // No match = 0 points
   } else if (!subServices || subServices.length === 0) {

@@ -37,16 +37,16 @@ export const servicesData: Service[] = [
     popularTag: 'Most Popular',
     subServices: [
       {
-        id: 'mopping',
-        name: 'Mopping & Floor Cleaning',
+        id: 'brooming',
+        name: 'Brooming & Mopping',
         description: 'Deep cleaning of all floor types including marble, tiles, and wooden floors',
         priceRange: '₹3,000 - ₹5,000/month',
         duration: '1-2 hours daily',
       },
       {
-        id: 'brooming',
-        name: 'Brooming & Dusting',
-        description: 'Daily sweeping and dusting of all rooms, furniture, and surfaces',
+        id: 'dusting',
+        name: 'Dusting & Home Organization',
+        description: 'Daily and dusting of all rooms, furniture, and surfaces and home organization',
         priceRange: '₹2,500 - ₹4,000/month',
         duration: '45 mins - 1 hour daily',
       },

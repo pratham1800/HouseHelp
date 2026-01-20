@@ -160,6 +160,39 @@ export const RequirementForm = ({
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  // Helper functions to determine which fields to show based on selected sub-services
+  const hasSubService = (subServiceId: string) => {
+    return selectedSubServices.some(sub => sub.id === subServiceId);
+  };
+
+  const shouldShowHouseSize = () => {
+    if (service.id !== 'cleaning') return false;
+    // Show house size for:
+    // 1. Full-house (needs both house size and family members)
+    // 2. All other cleaning sub-services (mopping, brooming, bathroom, etc.) - NOT dishwashing or laundry
+    const hasDishwashing = hasSubService('dishwashing');
+    const hasLaundry = hasSubService('laundry');
+    const hasFullHouse = hasSubService('full-house');
+    
+    // If full-house is selected, always show house size
+    if (hasFullHouse) return true;
+    
+    // If only dishwashing or laundry (without full-house), don't show house size
+    if ((hasDishwashing || hasLaundry) && !hasFullHouse) return false;
+    
+    // For all other cleaning services (mopping, brooming, bathroom, etc.), show house size
+    return true;
+  };
+
+  const shouldShowFamilyMembers = () => {
+    if (service.id !== 'cleaning') return false;
+    // Show family members ONLY for: dishwashing, laundry, or full-house
+    // NOT for other cleaning services (mopping, brooming, bathroom, etc.)
+    return hasSubService('dishwashing') || 
+           hasSubService('laundry') || 
+           hasSubService('full-house');
+  };
+
   const getServiceIcon = () => {
     switch (service.id) {
       case 'cleaning': return <Home className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />;
@@ -268,8 +301,9 @@ export const RequirementForm = ({
         startDate: formData.startDate,
         // Service-specific (will be stored in sub_services JSON)
         ...(service.id === 'cleaning' && {
-          houseSize: formData.houseSize,
-          bathroomCount: formData.bathroomCount,
+          ...(shouldShowHouseSize() && { houseSize: formData.houseSize }),
+          ...(shouldShowFamilyMembers() && { familyMembers: formData.familyMembers }),
+          ...(formData.bathroomCount && { bathroomCount: formData.bathroomCount }),
         }),
         ...(service.id === 'cooking' && {
           familyMembers: formData.familyMembers,
@@ -295,7 +329,7 @@ export const RequirementForm = ({
           selectedServices: selectedSubServices.map(s => ({ id: s.id, name: s.name })),
           serviceDetails,
         },
-        house_size: service.id === 'cleaning' ? formData.houseSize : 'N/A',
+        house_size: service.id === 'cleaning' && shouldShowHouseSize() && formData.houseSize ? formData.houseSize : (service.id === 'cleaning' ? 'N/A' : 'N/A'),
         preferred_time: formData.preferredTime,
         start_date: formData.startDate,
         full_name: formData.fullName,
@@ -392,7 +426,16 @@ export const RequirementForm = ({
     
     switch (service.id) {
       case 'cleaning':
-        return hasCommon && formData.houseSize;
+        // For dishwashing/laundry: need familyMembers
+        // For full-house: need both houseSize and familyMembers
+        // For others: need houseSize
+        if (hasSubService('full-house')) {
+          return hasCommon && formData.houseSize && formData.familyMembers;
+        } else if (hasSubService('dishwashing') || hasSubService('laundry')) {
+          return hasCommon && formData.familyMembers;
+        } else {
+          return hasCommon && formData.houseSize;
+        }
       case 'cooking':
         return hasCommon && formData.familyMembers && formData.dietaryPreference;
       case 'driver':
@@ -412,12 +455,22 @@ export const RequirementForm = ({
       case 'cleaning':
         return (
           <>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">House Size</span>
-              <span className="font-medium text-foreground">
-                {houseSizes.find(s => s.id === formData.houseSize)?.label || '-'}
-              </span>
-            </div>
+            {shouldShowHouseSize() && formData.houseSize && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">House Size</span>
+                <span className="font-medium text-foreground">
+                  {houseSizes.find(s => s.id === formData.houseSize)?.label || '-'}
+                </span>
+              </div>
+            )}
+            {shouldShowFamilyMembers() && formData.familyMembers && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">No. of People</span>
+                <span className="font-medium text-foreground">
+                  {familyMembers.find(f => f.id === formData.familyMembers)?.label || '-'}
+                </span>
+              </div>
+            )}
             {formData.bathroomCount && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Bathrooms</span>
@@ -567,23 +620,54 @@ export const RequirementForm = ({
                     {/* Cleaning-specific fields */}
                     {service.id === 'cleaning' && (
                       <>
-                        <Label className="text-sm font-medium mb-2 sm:mb-3 block">House Size</Label>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mb-4 sm:mb-6">
-                          {houseSizes.map((size) => (
-                            <button
-                              key={size.id}
-                              onClick={() => handleInputChange('houseSize', size.id)}
-                              className={`p-3 sm:p-4 rounded-xl border-2 transition-all text-left ${
-                                formData.houseSize === size.id
-                                  ? 'border-primary bg-primary/5'
-                                  : 'border-border hover:border-primary/50'
-                              }`}
-                            >
-                              <div className="font-medium text-foreground text-sm sm:text-base">{size.label}</div>
-                              <div className="text-xs text-muted-foreground">{size.description}</div>
-                            </button>
-                          ))}
-                        </div>
+                        {/* House Size - Show for full-house or if neither dishwashing nor laundry is selected */}
+                        {shouldShowHouseSize() && (
+                          <>
+                            <Label className="text-sm font-medium mb-2 sm:mb-3 block">House Size</Label>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mb-4 sm:mb-6">
+                              {houseSizes.map((size) => (
+                                <button
+                                  key={size.id}
+                                  onClick={() => handleInputChange('houseSize', size.id)}
+                                  className={`p-3 sm:p-4 rounded-xl border-2 transition-all text-left ${
+                                    formData.houseSize === size.id
+                                      ? 'border-primary bg-primary/5'
+                                      : 'border-border hover:border-primary/50'
+                                  }`}
+                                >
+                                  <div className="font-medium text-foreground text-sm sm:text-base">{size.label}</div>
+                                  <div className="text-xs text-muted-foreground">{size.description}</div>
+                                </button>
+                              ))}
+                            </div>
+                          </>
+                        )}
+
+                        {/* Family Members - Show for dishwashing, laundry, or full-house */}
+                        {shouldShowFamilyMembers() && (
+                          <>
+                            <Label className="text-sm font-medium mb-2 sm:mb-3 block flex items-center gap-2">
+                              <Users className="w-4 h-4 text-primary" />
+                              Number of People in Household
+                            </Label>
+                            <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-4 sm:mb-6">
+                              {familyMembers.map((size) => (
+                                <button
+                                  key={size.id}
+                                  onClick={() => handleInputChange('familyMembers', size.id)}
+                                  className={`p-3 sm:p-4 rounded-xl border-2 transition-all text-left ${
+                                    formData.familyMembers === size.id
+                                      ? 'border-primary bg-primary/5'
+                                      : 'border-border hover:border-primary/50'
+                                  }`}
+                                >
+                                  <div className="font-medium text-foreground text-sm sm:text-base">{size.label}</div>
+                                  <div className="text-xs text-muted-foreground">{size.description}</div>
+                                </button>
+                              ))}
+                            </div>
+                          </>
+                        )}
 
                         {/* Show bathroom count if bathroom cleaning is selected */}
                         {selectedSubServices.some(s => s.id === 'bathroom') && (

@@ -33,6 +33,7 @@ interface BookingData {
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   pending: { label: 'Pending', color: 'bg-amber-100 text-amber-700' },
+  confirmed: { label: 'Confirmed', color: 'bg-green-100 text-green-700' },
   call_scheduled: { label: 'Call Scheduled', color: 'bg-blue-100 text-blue-700' },
   trial_active: { label: 'Trial Ongoing', color: 'bg-purple-100 text-purple-700' },
   completed: { label: 'Completed', color: 'bg-green-100 text-green-700' },

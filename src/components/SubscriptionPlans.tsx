@@ -14,7 +14,7 @@ const plans = [
     features: [
       '1 active worker management',
       'Worker verification & background check',
-      '7-day trial period',
+      '3-day trial period',
       'Up to 2 replacements per year',
       'Basic customer support',
       'Worker attendance dashboard',
@@ -34,7 +34,7 @@ const plans = [
     features: [
       'Up to 2 active workers',
       'Worker verification & background check',
-      '7-day trial period',
+      '3-day trial period',
       'Up to 2 replacements per year',
       'Basic customer support',
       'Worker attendance dashboard',
@@ -54,7 +54,7 @@ const plans = [
     features: [
       'Up to 2 active workers',
       'Worker verification & background check',
-      '7-day trial period',
+      '3-day trial period',
       'Up to 2 replacements per year',
       'Basic customer support',
       'Worker attendance dashboard',
@@ -74,7 +74,7 @@ const plans = [
     features: [
       'Up to 3 active workers',
       'Worker verification & background check',
-      '7-day trial period',
+      '3-day trial period',
       'Up to 2 replacements per year',
       'Basic customer support',
       'Worker attendance dashboard',

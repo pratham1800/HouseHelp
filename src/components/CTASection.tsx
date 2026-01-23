@@ -21,7 +21,7 @@ export const CTASection = () => {
           </h2>
           <p className="text-xl text-white/80 mb-10">
             Join 10,000+ happy families who trust GharSeva for their everyday home needs. 
-            Start with a 7-day free trial today.
+            Start with a 3-day free trial today.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

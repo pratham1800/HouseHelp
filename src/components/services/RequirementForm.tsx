@@ -1018,7 +1018,7 @@ export const RequirementForm = ({
                   <div className="flex items-center gap-3 bg-success/10 text-success rounded-xl p-4">
                     <CheckCircle className="w-5 h-5 flex-shrink-0" />
                     <p className="text-sm">
-                      All workers are 100% verified with background checks. 7-day free trial included!
+                      All workers are 100% verified with background checks. 3-day free trial included!
                     </p>
                   </div>
                 </motion.div>
@@ -1065,7 +1065,7 @@ export const RequirementForm = ({
                       </div>
                       <div className="flex items-center gap-2 justify-center">
                         <CheckCircle className="w-4 h-4 text-success" />
-                        <span>7-day free trial with selected worker</span>
+                        <span>3-day free trial with selected worker</span>
                       </div>
                     </div>
                   </div>

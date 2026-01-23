@@ -9,7 +9,7 @@ const SYSTEM_PROMPT = `You are GharSeva's friendly customer support assistant. Y
 
 About GharSeva:
 - GharSeva connects home owners with verified domestic help (maids, cooks, drivers, gardeners)
-- We offer a 7-day free trial before you commit
+- We offer a 3-day free trial before you commit
 - Subscription plans: Standard (₹499/month) and Premium (₹999/month)
 - Non-subscribed users pay ₹2 per finalized booking, with a maximum of 3 calls
 

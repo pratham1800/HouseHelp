@@ -11,7 +11,7 @@ const features = [
   },
   {
     icon: Clock,
-    title: '7-Day Free Trial',
+    title: '3-Day Free Trial',
     description: 'Test the match. Not satisfied? Choose another worker at no extra cost',
     color: 'text-primary',
     bgColor: 'bg-primary/10',

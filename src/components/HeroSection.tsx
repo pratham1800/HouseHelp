@@ -132,7 +132,7 @@ export const HeroSection = () => {
                     <Shield className="w-6 h-6 text-success" />
                   </div>
                   <div>
-                    <p className="font-semibold text-foreground">7-Day Free Trial</p>
+                    <p className="font-semibold text-foreground">3-Day Free Trial</p>
                     <p className="text-sm text-muted-foreground">100% Satisfaction</p>
                   </div>
                 </div>

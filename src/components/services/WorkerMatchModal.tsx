@@ -47,7 +47,7 @@ export const WorkerMatchModal = ({
     try {
       // Calculate trial dates
       const trialStartDate = new Date().toISOString();
-      const trialEndDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      const trialEndDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
       const scheduledCallDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
       // Update worker with assignment
@@ -79,7 +79,7 @@ export const WorkerMatchModal = ({
 
       toast({
         title: "Worker Selected! 🎉",
-        description: `${worker.name} will contact you within 24 hours to schedule a call. Your 7-day trial starts after confirmation.`,
+        description: `${worker.name} will contact you within 24 hours to schedule a call. Your 3-day trial starts after confirmation.`,
       });
 
       onWorkerSelected();
@@ -264,7 +264,7 @@ export const WorkerMatchModal = ({
               <div className="flex items-start gap-3 text-sm text-muted-foreground">
                 <CheckCircle className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium text-foreground">7-Day Free Trial Included</p>
+                  <p className="font-medium text-foreground">3-Day Free Trial Included</p>
                   <p>After selecting a worker, you'll get a scheduled call within 24 hours. 
                   The trial begins after the first successful visit.</p>
                 </div>

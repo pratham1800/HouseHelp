@@ -100,6 +100,15 @@ const timeSlots = [
 
 const MATCHING_FEE = 199;
 
+// Helper function to get today's date in local timezone (YYYY-MM-DD format)
+const getTodayLocalDate = (): string => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 interface MatchedWorker {
   id: string;
   name: string;
@@ -867,7 +876,7 @@ export const RequirementForm = ({
                       type="date"
                       value={formData.startDate}
                       onChange={(e) => handleInputChange('startDate', e.target.value)}
-                      min={new Date().toISOString().split('T')[0]}
+                      min={getTodayLocalDate()}
                       className="max-w-full sm:max-w-xs"
                     />
                   </div>

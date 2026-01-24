@@ -5,7 +5,7 @@
  */
 
 export interface TrialStatusResult {
-  status: 'pending' | 'confirmed' | 'trial_started' | 'trial_ended' | string;
+  status: 'pending' | 'confirmed' | 'trial_started' | 'trial_ended' | 'work_assigned' | string;
   label: string;
   color: string;
   daysRemaining?: number;
@@ -15,7 +15,7 @@ export function computeTrialStatus(
   startDate: string,
   currentStatus: string
 ): TrialStatusResult {
-  // If booking is cancelled or completed, don't override
+  // If booking is cancelled, completed, or work_assigned, don't override
   if (currentStatus === 'cancelled' || currentStatus === 'completed') {
     return {
       status: currentStatus,
@@ -23,6 +23,15 @@ export function computeTrialStatus(
       color: currentStatus === 'cancelled' 
         ? 'bg-red-100 text-red-700' 
         : 'bg-gray-100 text-gray-700'
+    };
+  }
+
+  // Work assigned status takes precedence
+  if (currentStatus === 'work_assigned') {
+    return {
+      status: 'work_assigned',
+      label: 'Work Assigned',
+      color: 'bg-green-100 text-green-700'
     };
   }
 
@@ -98,6 +107,7 @@ export function getTrialStatusHindi(status: string): string {
     confirmed: 'पुष्टि',
     trial_started: 'ट्रायल शुरू',
     trial_ended: 'ट्रायल समाप्त',
+    work_assigned: 'काम सौंपा गया',
     cancelled: 'रद्द',
     completed: 'पूर्ण'
   };

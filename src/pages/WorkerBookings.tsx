@@ -40,6 +40,7 @@ const statusConfig: Record<string, { label: string; color: string }> = {
   trial_started: { label: 'Trial Started', color: 'bg-blue-100 text-blue-700' },
   trial_ended: { label: 'Trial Ended', color: 'bg-purple-100 text-purple-700' },
   trial_active: { label: 'Trial Ongoing', color: 'bg-purple-100 text-purple-700' },
+  work_assigned: { label: 'Work Assigned', color: 'bg-green-100 text-green-700' },
   completed: { label: 'Completed', color: 'bg-green-100 text-green-700' },
   cancelled: { label: 'Cancelled', color: 'bg-red-100 text-red-700' },
 };

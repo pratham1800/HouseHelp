@@ -100,12 +100,18 @@ const timeSlots = [
 
 const MATCHING_FEE = 199;
 
-// Helper function to get today's date in local timezone (YYYY-MM-DD format)
-const getTodayLocalDate = (): string => {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-  const day = String(today.getDate()).padStart(2, '0');
+// Helper function to get minimum selectable date in local timezone (YYYY-MM-DD format)
+// If current time is after 5 PM, return tomorrow's date, otherwise return today's date
+const getMinSelectableDate = (): string => {
+  const now = new Date();
+  const currentHour = now.getHours();
+  
+  // If it's after 5 PM (17:00), use tomorrow's date
+  const targetDate = currentHour >= 17 ? new Date(now.getTime() + 24 * 60 * 60 * 1000) : now;
+  
+  const year = targetDate.getFullYear();
+  const month = String(targetDate.getMonth() + 1).padStart(2, '0');
+  const day = String(targetDate.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 };
 
@@ -876,7 +882,7 @@ export const RequirementForm = ({
                       type="date"
                       value={formData.startDate}
                       onChange={(e) => handleInputChange('startDate', e.target.value)}
-                      min={getTodayLocalDate()}
+                      min={getMinSelectableDate()}
                       className="max-w-full sm:max-w-xs"
                     />
                   </div>

@@ -19,7 +19,8 @@ import {
   Sparkles,
   ArrowUpRight,
   XCircle,
-  Users
+  Users,
+  UserCheck
 } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
@@ -31,6 +32,8 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { servicesData } from '@/data/servicesData';
+import { SubscriptionModal } from '@/components/SubscriptionModal';
+import { HireConfirmationModal } from '@/components/HireConfirmationModal';
 
 interface Worker {
   id: string;
@@ -88,6 +91,11 @@ const statusConfig: Record<string, { label: string; color: string; icon: React.R
     color: 'bg-purple-100 text-purple-800 border-purple-200', 
     icon: <Square className="w-3 h-3" /> 
   },
+  work_assigned: { 
+    label: 'Work Assigned', 
+    color: 'bg-green-100 text-green-800 border-green-200', 
+    icon: <UserCheck className="w-3 h-3" /> 
+  },
   in_progress: { 
     label: 'In Progress', 
     color: 'bg-blue-100 text-blue-800 border-blue-200', 
@@ -130,6 +138,10 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [showHireConfirmModal, setShowHireConfirmModal] = useState(false);
+  const [pendingHireBooking, setPendingHireBooking] = useState<Booking | null>(null);
+  const [hiring, setHiring] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -248,6 +260,66 @@ const Dashboard = () => {
     await signOut();
     navigate('/');
   };
+
+  const handleHireClick = (booking: Booking) => {
+    setPendingHireBooking(booking);
+    
+    // Check if user has active subscription
+    if (!subscription) {
+      setShowSubscriptionModal(true);
+    } else {
+      setShowHireConfirmModal(true);
+    }
+  };
+
+  const handleConfirmHire = async () => {
+    if (!pendingHireBooking || !user) return;
+    
+    setHiring(true);
+    try {
+      // Update booking status to work_assigned
+      const { error } = await supabase
+        .from('bookings')
+        .update({ status: 'work_assigned' })
+        .eq('id', pendingHireBooking.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setBookings(prev => 
+        prev.map(b => 
+          b.id === pendingHireBooking.id 
+            ? { ...b, status: 'work_assigned' } 
+            : b
+        )
+      );
+
+      toast({
+        title: "🎉 Worker Hired Successfully!",
+        description: `${pendingHireBooking.worker?.name} has been permanently assigned to your ${pendingHireBooking.service_title} service.`,
+      });
+
+      setShowHireConfirmModal(false);
+      setPendingHireBooking(null);
+    } catch (error) {
+      console.error('Error hiring worker:', error);
+      toast({
+        title: "Hiring Failed",
+        description: "There was an error completing the hire. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setHiring(false);
+    }
+  };
+
+  // Watch for subscription changes to continue hire flow
+  useEffect(() => {
+    if (subscription && pendingHireBooking && showSubscriptionModal) {
+      setShowSubscriptionModal(false);
+      setShowHireConfirmModal(true);
+    }
+  }, [subscription, pendingHireBooking, showSubscriptionModal]);
 
   if (authLoading || loading) {
     return (
@@ -586,7 +658,30 @@ const Dashboard = () => {
                             {/* Assigned Worker */}
                             {booking.worker && (
                               <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
-                                <p className="text-sm font-medium text-foreground mb-3">Assigned Worker</p>
+                                <div className="flex items-center justify-between mb-3">
+                                  <p className="text-sm font-medium text-foreground">Assigned Worker</p>
+                                  {/* Hire Button - Show only when trial ended and not already hired */}
+                                  {(() => {
+                                    const trialStatus = computeTrialStatus(booking.start_date, booking.status);
+                                    if (trialStatus.status === 'trial_ended' && booking.status !== 'work_assigned') {
+                                      return (
+                                        <Button
+                                          variant="hero"
+                                          size="sm"
+                                          className="gap-2"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleHireClick(booking);
+                                          }}
+                                        >
+                                          <UserCheck className="w-4 h-4" />
+                                          Hire Worker
+                                        </Button>
+                                      );
+                                    }
+                                    return null;
+                                  })()}
+                                </div>
                                 <div className="flex items-center gap-4">
                                   <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
                                     <User className="w-6 h-6 text-primary" />
@@ -598,7 +693,7 @@ const Dashboard = () => {
                                     </p>
                                     {booking.avg_rating && (
                                       <div className="flex items-center gap-1 mt-1">
-                                        <span className="text-yellow-500">★</span>
+                                        <span className="text-amber-500">★</span>
                                         <span className="text-sm font-medium">{booking.avg_rating.toFixed(1)}</span>
                                       </div>
                                     )}
@@ -669,6 +764,28 @@ const Dashboard = () => {
       </main>
       <Footer />
       <WhatsAppButton />
+
+      {/* Subscription Modal */}
+      <SubscriptionModal 
+        isOpen={showSubscriptionModal}
+        onClose={() => {
+          setShowSubscriptionModal(false);
+          setPendingHireBooking(null);
+        }}
+      />
+
+      {/* Hire Confirmation Modal */}
+      <HireConfirmationModal
+        isOpen={showHireConfirmModal}
+        onClose={() => {
+          setShowHireConfirmModal(false);
+          setPendingHireBooking(null);
+        }}
+        onConfirm={handleConfirmHire}
+        worker={pendingHireBooking?.worker || null}
+        serviceName={pendingHireBooking?.service_title || ''}
+        loading={hiring}
+      />
     </div>
   );
 };

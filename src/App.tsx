@@ -23,6 +23,7 @@ import WorkerProfile from "./pages/WorkerProfile";
 import WorkerBookings from "./pages/WorkerBookings";
 import WorkerEarnings from "./pages/WorkerEarnings";
 import WorkerHowItWorks from "./pages/WorkerHowItWorks";
+import WorkerMyEmployers from "./pages/WorkerMyEmployers";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -98,6 +99,11 @@ const App = () => (
               <Route path="/for-workers/earnings" element={
                 <ProtectedRoute requiredRole="worker">
                   <WorkerEarnings />
+                </ProtectedRoute>
+              } />
+              <Route path="/for-workers/my-employers" element={
+                <ProtectedRoute requiredRole="worker">
+                  <WorkerMyEmployers />
                 </ProtectedRoute>
               } />
               

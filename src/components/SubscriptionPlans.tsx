@@ -89,9 +89,10 @@ const plans = [
 
 interface SubscriptionPlansProps {
   compact?: boolean;
+  onPlanSelected?: (planName: string, planPrice: number) => void;
 }
 
-export const SubscriptionPlans = ({ compact = false }: SubscriptionPlansProps) => {
+export const SubscriptionPlans = ({ compact = false, onPlanSelected }: SubscriptionPlansProps) => {
   const { user } = useAuth();
   const { subscription, subscribing, subscribe } = useSubscription();
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -104,6 +105,12 @@ export const SubscriptionPlans = ({ compact = false }: SubscriptionPlansProps) =
       return;
     }
 
+    // If onPlanSelected is provided (modal mode), call it instead of subscribing directly
+    if (onPlanSelected) {
+      onPlanSelected(planName, planPrice);
+      return;
+    }
+
     await subscribe(planName, planPrice);
   };
 
@@ -112,7 +119,11 @@ export const SubscriptionPlans = ({ compact = false }: SubscriptionPlansProps) =
     if (pendingPlan) {
       // Wait a moment for auth state to settle
       setTimeout(() => {
-        subscribe(pendingPlan.name, pendingPlan.price);
+        if (onPlanSelected) {
+          onPlanSelected(pendingPlan.name, pendingPlan.price);
+        } else {
+          subscribe(pendingPlan.name, pendingPlan.price);
+        }
         setPendingPlan(null);
       }, 500);
     }

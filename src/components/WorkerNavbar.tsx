@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ChevronDown, Briefcase, User, LogOut, LayoutDashboard, Gift, HelpCircle, UserCircle, IndianRupee } from 'lucide-react';
+import { Menu, X, ChevronDown, Briefcase, User, LogOut, LayoutDashboard, Gift, HelpCircle, UserCircle, IndianRupee, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
@@ -213,6 +213,16 @@ export const WorkerNavbar = () => {
                         </button>
                         <button
                           onClick={() => {
+                            navigate('/for-workers/my-employers');
+                            setShowUserDropdown(false);
+                          }}
+                          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-left"
+                        >
+                          <Users className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-sm text-foreground">{t('myEmployers') || 'My Employers'}</span>
+                        </button>
+                        <button
+                          onClick={() => {
                             handleSignOut();
                             setShowUserDropdown(false);
                           }}
@@ -300,9 +310,18 @@ export const WorkerNavbar = () => {
                     <IndianRupee className="w-5 h-5" />
                     {t('myEarnings')}
                   </button>
+                  <button
+                    onClick={() => {
+                      navigate('/for-workers/my-employers');
+                      setIsOpen(false);
+                    }}
+                    className="flex items-center gap-3 w-full text-left py-2 font-medium text-foreground hover:text-primary"
+                  >
+                    <Users className="w-5 h-5" />
+                    {t('myEmployers') || 'My Employers'}
+                  </button>
                 </>
               )}
-              
               <button
                 onClick={handleOwnerPortalClick}
                 className="block w-full text-left py-2 text-muted-foreground hover:text-foreground border-t border-border pt-4"

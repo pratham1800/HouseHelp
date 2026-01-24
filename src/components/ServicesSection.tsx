@@ -119,7 +119,7 @@ export const ServicesSection = () => {
                   className="w-full gap-2"
                   onClick={(e) => {
                     e.stopPropagation();
-                    navigate(`/services/${service.id}`);
+                    navigate(`/services/${service.id}#sub-services`);
                   }}
                 >
                   Book Now

@@ -5,13 +5,13 @@ import { SubscriptionPlans } from './SubscriptionPlans';
 interface SubscriptionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubscribed?: () => void;
+  onPlanSelected?: (planName: string, planPrice: number) => void;
 }
 
 export const SubscriptionModal = ({
   isOpen,
   onClose,
-  onSubscribed,
+  onPlanSelected,
 }: SubscriptionModalProps) => {
   if (!isOpen) return null;
 
@@ -44,7 +44,7 @@ export const SubscriptionModal = ({
 
           {/* Content - Compact version */}
           <div className="p-4 sm:p-6 max-h-[85vh] overflow-y-auto">
-            <SubscriptionPlans compact />
+            <SubscriptionPlans compact onPlanSelected={onPlanSelected} />
           </div>
         </motion.div>
       </div>

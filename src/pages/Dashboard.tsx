@@ -33,7 +33,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { servicesData } from '@/data/servicesData';
 import { SubscriptionModal } from '@/components/SubscriptionModal';
-import { HireConfirmationModal } from '@/components/HireConfirmationModal';
+import { PaymentModal } from '@/components/PaymentModal';
+import { HireSalaryModal } from '@/components/HireSalaryModal';
 
 interface Worker {
   id: string;
@@ -139,8 +140,10 @@ const Dashboard = () => {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
-  const [showHireConfirmModal, setShowHireConfirmModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showHireSalaryModal, setShowHireSalaryModal] = useState(false);
   const [pendingHireBooking, setPendingHireBooking] = useState<Booking | null>(null);
+  const [pendingPlan, setPendingPlan] = useState<{ name: string; price: number } | null>(null);
   const [hiring, setHiring] = useState(false);
 
   useEffect(() => {
@@ -268,22 +271,58 @@ const Dashboard = () => {
     if (!subscription) {
       setShowSubscriptionModal(true);
     } else {
-      setShowHireConfirmModal(true);
+      // User has subscription, proceed to salary modal
+      setShowHireSalaryModal(true);
     }
   };
 
-  const handleConfirmHire = async () => {
-    if (!pendingHireBooking || !user) return;
+  // Called when user selects a plan from subscription modal
+  const handlePlanSelected = (planName: string, planPrice: number) => {
+    setPendingPlan({ name: planName, price: planPrice });
+    setShowSubscriptionModal(false);
+    setShowPaymentModal(true);
+  };
+
+  // Called when payment is successful
+  const handlePaymentSuccess = async () => {
+    if (pendingPlan) {
+      // Create the subscription
+      await subscribe(pendingPlan.name, pendingPlan.price);
+      setPendingPlan(null);
+    }
+    setShowPaymentModal(false);
+    // Now show the salary modal to complete hiring
+    if (pendingHireBooking) {
+      setShowHireSalaryModal(true);
+    }
+  };
+
+  const handleConfirmHire = async (salary: number, frequency: string) => {
+    if (!pendingHireBooking || !pendingHireBooking.worker || !user) return;
     
     setHiring(true);
     try {
+      // Add worker to hired_workers table
+      const { error: hireError } = await supabase
+        .from('hired_workers')
+        .insert({
+          owner_id: user.id,
+          worker_id: pendingHireBooking.worker.id,
+          agreed_salary: salary,
+          salary_frequency: frequency,
+          status: 'active',
+          hired_date: new Date().toISOString()
+        });
+
+      if (hireError) throw hireError;
+
       // Update booking status to work_assigned
-      const { error } = await supabase
+      const { error: bookingError } = await supabase
         .from('bookings')
         .update({ status: 'work_assigned' })
         .eq('id', pendingHireBooking.id);
 
-      if (error) throw error;
+      if (bookingError) throw bookingError;
 
       // Update local state
       setBookings(prev => 
@@ -296,10 +335,10 @@ const Dashboard = () => {
 
       toast({
         title: "🎉 Worker Hired Successfully!",
-        description: `${pendingHireBooking.worker?.name} has been permanently assigned to your ${pendingHireBooking.service_title} service.`,
+        description: `${pendingHireBooking.worker?.name} has been added to your employees with ₹${salary.toLocaleString()}/${frequency} salary.`,
       });
 
-      setShowHireConfirmModal(false);
+      setShowHireSalaryModal(false);
       setPendingHireBooking(null);
     } catch (error) {
       console.error('Error hiring worker:', error);
@@ -317,7 +356,7 @@ const Dashboard = () => {
   useEffect(() => {
     if (subscription && pendingHireBooking && showSubscriptionModal) {
       setShowSubscriptionModal(false);
-      setShowHireConfirmModal(true);
+      setShowHireSalaryModal(true);
     }
   }, [subscription, pendingHireBooking, showSubscriptionModal]);
 
@@ -772,13 +811,26 @@ const Dashboard = () => {
           setShowSubscriptionModal(false);
           setPendingHireBooking(null);
         }}
+        onPlanSelected={handlePlanSelected}
       />
 
-      {/* Hire Confirmation Modal */}
-      <HireConfirmationModal
-        isOpen={showHireConfirmModal}
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={showPaymentModal}
         onClose={() => {
-          setShowHireConfirmModal(false);
+          setShowPaymentModal(false);
+          setPendingPlan(null);
+        }}
+        onSuccess={handlePaymentSuccess}
+        planName={pendingPlan?.name || ''}
+        planPrice={pendingPlan?.price || 0}
+      />
+
+      {/* Hire Salary Modal */}
+      <HireSalaryModal
+        isOpen={showHireSalaryModal}
+        onClose={() => {
+          setShowHireSalaryModal(false);
           setPendingHireBooking(null);
         }}
         onConfirm={handleConfirmHire}

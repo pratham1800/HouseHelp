@@ -31,10 +31,14 @@ interface BookingData {
   created_at: string;
 }
 
+import { computeTrialStatus } from '@/utils/trialStatus';
+
 const statusConfig: Record<string, { label: string; color: string }> = {
   pending: { label: 'Pending', color: 'bg-amber-100 text-amber-700' },
   confirmed: { label: 'Confirmed', color: 'bg-green-100 text-green-700' },
   call_scheduled: { label: 'Call Scheduled', color: 'bg-blue-100 text-blue-700' },
+  trial_started: { label: 'Trial Started', color: 'bg-blue-100 text-blue-700' },
+  trial_ended: { label: 'Trial Ended', color: 'bg-purple-100 text-purple-700' },
   trial_active: { label: 'Trial Ongoing', color: 'bg-purple-100 text-purple-700' },
   completed: { label: 'Completed', color: 'bg-green-100 text-green-700' },
   cancelled: { label: 'Cancelled', color: 'bg-red-100 text-red-700' },
@@ -146,7 +150,8 @@ export default function WorkerBookings() {
             ) : (
               <div className="space-y-4">
                 {bookings.map((booking, index) => {
-                  const status = statusConfig[booking.status] || statusConfig.pending;
+                  const trialStatus = computeTrialStatus(booking.start_date, booking.status);
+                  const status = statusConfig[trialStatus.status] || statusConfig.pending;
                   
                   return (
                     <motion.div
@@ -176,6 +181,9 @@ export default function WorkerBookings() {
                         {/* Status Badge */}
                         <Badge className={status.color}>
                           {status.label}
+                          {trialStatus.daysRemaining !== undefined && (
+                            <span className="ml-1">({trialStatus.daysRemaining}d left)</span>
+                          )}
                         </Badge>
                       </div>
 

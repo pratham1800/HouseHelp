@@ -64,6 +64,9 @@ interface Booking {
   avg_rating?: number;
 }
 
+import { computeTrialStatus } from '@/utils/trialStatus';
+import { Play, Square } from 'lucide-react';
+
 const statusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   pending: { 
     label: 'Pending', 
@@ -74,6 +77,16 @@ const statusConfig: Record<string, { label: string; color: string; icon: React.R
     label: 'Confirmed', 
     color: 'bg-green-100 text-green-800 border-green-200', 
     icon: <CheckCircle className="w-3 h-3" /> 
+  },
+  trial_started: { 
+    label: 'Trial Started', 
+    color: 'bg-blue-100 text-blue-800 border-blue-200', 
+    icon: <Play className="w-3 h-3" /> 
+  },
+  trial_ended: { 
+    label: 'Trial Ended', 
+    color: 'bg-purple-100 text-purple-800 border-purple-200', 
+    icon: <Square className="w-3 h-3" /> 
   },
   in_progress: { 
     label: 'In Progress', 
@@ -525,10 +538,19 @@ const Dashboard = () => {
                               {booking.sub_services.length} service{booking.sub_services.length !== 1 ? 's' : ''} • {houseSizeLabels[booking.house_size] || booking.house_size}
                             </p>
                           </div>
-                          <Badge className={`${statusConfig[booking.status]?.color || statusConfig.pending.color} gap-1`}>
-                            {statusConfig[booking.status]?.icon}
-                            {statusConfig[booking.status]?.label || booking.status}
-                          </Badge>
+                          {(() => {
+                            const trialStatus = computeTrialStatus(booking.start_date, booking.status);
+                            const displayStatus = statusConfig[trialStatus.status] || statusConfig.pending;
+                            return (
+                              <Badge className={`${displayStatus.color} gap-1`}>
+                                {displayStatus.icon}
+                                <span>{displayStatus.label}</span>
+                                {trialStatus.daysRemaining !== undefined && (
+                                  <span className="ml-1">({trialStatus.daysRemaining}d left)</span>
+                                )}
+                              </Badge>
+                            );
+                          })()}
                         </div>
 
                         <div className="flex flex-wrap items-center gap-4 mt-3 text-sm">

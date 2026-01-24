@@ -127,6 +127,20 @@ const ServiceDetailPage = ({ service }: { service: Service }) => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
+  // Scroll to sub-services section when component mounts
+  useEffect(() => {
+    // Small delay to ensure DOM is rendered
+    setTimeout(() => {
+      const subServicesSection = document.getElementById('sub-services');
+      if (subServicesSection) {
+        subServicesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        // Fallback to top if section not found
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }, 100);
+  }, []);
+
   const handleSelectSubService = (subService: SubService) => {
     setSelectedSubServices(prev => {
       const exists = prev.find(s => s.id === subService.id);
@@ -181,7 +195,7 @@ const ServiceDetailPage = ({ service }: { service: Service }) => {
         </section>
 
         {/* Sub-services Grid */}
-        <section className="px-4 sm:px-8 lg:px-16 py-6 sm:py-12 lg:py-16">
+        <section id="sub-services" className="px-4 sm:px-8 lg:px-16 py-6 sm:py-12 lg:py-16">
           <div className="container-main">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -307,6 +321,21 @@ const Services = () => {
       navigate('/services');
     }
   }, [serviceId, service, navigate]);
+
+  // Handle hash navigation to sub-services section
+  useEffect(() => {
+    if (serviceId && service) {
+      // Check if URL has hash for sub-services
+      if (window.location.hash === '#sub-services') {
+        setTimeout(() => {
+          const subServicesSection = document.getElementById('sub-services');
+          if (subServicesSection) {
+            subServicesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 300);
+      }
+    }
+  }, [serviceId, service]);
 
   if (serviceId && service) {
     return <ServiceDetailPage service={service} />;

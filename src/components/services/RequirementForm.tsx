@@ -357,6 +357,31 @@ export const RequirementForm = ({
       }).select().single();
 
       if (error) throw error;
+
+      // Update user profile with address and phone number
+      if (formData.address || formData.phone) {
+        const profileUpdate: { id: string; address?: string; phone?: string } = {
+          id: user.id,
+        };
+        if (formData.address) {
+          profileUpdate.address = formData.address;
+        }
+        if (formData.phone) {
+          profileUpdate.phone = formData.phone;
+        }
+
+        // Use upsert to update or create profile if it doesn't exist
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .upsert(profileUpdate, {
+            onConflict: 'id',
+          });
+
+        if (profileError) {
+          console.error('Error updating profile:', profileError);
+          // Don't throw error - booking is already created, just log it
+        }
+      }
       
       toast({
         title: "Booking Created! 💼",

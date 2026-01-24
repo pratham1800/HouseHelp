@@ -87,7 +87,11 @@ const plans = [
   },
 ];
 
-export const SubscriptionPlans = () => {
+interface SubscriptionPlansProps {
+  compact?: boolean;
+}
+
+export const SubscriptionPlans = ({ compact = false }: SubscriptionPlansProps) => {
   const { user } = useAuth();
   const { subscription, subscribing, subscribe } = useSubscription();
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -119,26 +123,28 @@ export const SubscriptionPlans = () => {
   };
 
   return (
-    <section id="subscription" className="section-padding bg-background">
-      <div className="container-main">
-        {/* Demo Mode Banner */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border border-amber-500/20 rounded-2xl p-4 mb-8 text-center"
-        >
-          <div className="flex items-center justify-center gap-2 text-amber-600">
-            <Sparkles className="w-5 h-5" />
-            <span className="font-medium">Demo Mode</span>
-            <Sparkles className="w-5 h-5" />
-          </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            Test subscriptions freely - no real payments will be processed
-          </p>
-        </motion.div>
+    <section id="subscription" className={compact ? "py-2" : "section-padding bg-background"}>
+      <div className={compact ? "px-2" : "container-main"}>
+        {/* Demo Mode Banner - Hide in compact mode */}
+        {!compact && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border border-amber-500/20 rounded-2xl p-4 mb-8 text-center"
+          >
+            <div className="flex items-center justify-center gap-2 text-amber-600">
+              <Sparkles className="w-5 h-5" />
+              <span className="font-medium">Demo Mode</span>
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <p className="text-sm text-muted-foreground mt-1">
+              Test subscriptions freely - no real payments will be processed
+            </p>
+          </motion.div>
+        )}
 
-        {/* Current Subscription Status */}
-        {subscription && (
+        {/* Current Subscription Status - Hide in compact mode */}
+        {!compact && subscription && (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -167,29 +173,31 @@ export const SubscriptionPlans = () => {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-12 md:mb-16"
+          className={`text-center ${compact ? 'mb-6' : 'mb-12 md:mb-16'}`}
         >
-          <span className="inline-block px-4 py-1.5 bg-secondary/10 text-secondary rounded-full text-sm font-medium mb-4">
-            Subscription Plans
-          </span>
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
-            Simple, Transparent <span className="text-gradient">Pricing</span>
+          {!compact && (
+            <span className="inline-block px-4 py-1.5 bg-secondary/10 text-secondary rounded-full text-sm font-medium mb-4">
+              Subscription Plans
+            </span>
+          )}
+          <h2 className={`font-bold text-foreground mb-2 ${compact ? 'text-xl sm:text-2xl' : 'text-3xl md:text-4xl lg:text-5xl mb-4'}`}>
+            {compact ? 'Choose a Plan to Hire' : <>Simple, Transparent <span className="text-gradient">Pricing</span></>}
           </h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Choose the plan that works best for your family. Upgrade or downgrade anytime.
+          <p className={`text-muted-foreground ${compact ? 'text-sm' : 'text-lg'} max-w-2xl mx-auto`}>
+            {compact ? 'Subscribe to permanently hire your worker' : 'Choose the plan that works best for your family. Upgrade or downgrade anytime.'}
           </p>
         </motion.div>
 
         {/* Plans Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+        <div className={`grid gap-4 ${compact ? 'grid-cols-2 lg:grid-cols-4 max-w-6xl' : 'md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl'} mx-auto`}>
           {plans.map((plan, index) => (
             <motion.div
               key={plan.name}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: index * 0.15 }}
-              className={`relative rounded-3xl p-8 flex flex-col ${
+              transition={{ delay: index * 0.1 }}
+              className={`relative rounded-2xl ${compact ? 'p-4' : 'p-8'} flex flex-col ${
                 plan.popular
                   ? 'bg-gradient-to-br from-primary/5 via-card to-secondary/5 border-2 border-primary/20 shadow-elevated'
                   : 'bg-card shadow-card'
@@ -216,27 +224,30 @@ export const SubscriptionPlans = () => {
               )}
 
               {/* Plan Header */}
-              <div className="text-center mb-8">
-                <h3 className="text-2xl font-bold text-foreground mb-2">{plan.name}</h3>
-                <p className="text-muted-foreground text-sm mb-4">{plan.description}</p>
+              <div className={`text-center ${compact ? 'mb-4' : 'mb-8'}`}>
+                <h3 className={`font-bold text-foreground ${compact ? 'text-lg mb-1' : 'text-2xl mb-2'}`}>{plan.name}</h3>
+                {!compact && <p className="text-muted-foreground text-sm mb-4">{plan.description}</p>}
                 <div className="flex items-baseline justify-center gap-1">
-                  <span className="text-lg text-muted-foreground">₹</span>
-                  <span className="text-5xl font-bold text-foreground">{plan.price}</span>
-                  <span className="text-muted-foreground">/month</span>
+                  <span className={`text-muted-foreground ${compact ? 'text-sm' : 'text-lg'}`}>₹</span>
+                  <span className={`font-bold text-foreground ${compact ? 'text-3xl' : 'text-5xl'}`}>{plan.price}</span>
+                  <span className="text-muted-foreground text-sm">/mo</span>
                 </div>
               </div>
 
-              {/* Features */}
-              <div className="space-y-4 mb-8 flex-grow">
-                {plan.features.map((feature) => (
-                  <div key={feature} className="flex items-start gap-3">
-                    <div className="w-5 h-5 rounded-full bg-success/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Check className="w-3 h-3 text-success" />
+              {/* Features - Show limited in compact mode */}
+              <div className={`space-y-2 ${compact ? 'mb-4' : 'mb-8'} flex-grow`}>
+                {(compact ? plan.features.slice(0, 3) : plan.features).map((feature) => (
+                  <div key={feature} className="flex items-start gap-2">
+                    <div className={`rounded-full bg-success/10 flex items-center justify-center flex-shrink-0 mt-0.5 ${compact ? 'w-4 h-4' : 'w-5 h-5'}`}>
+                      <Check className={`text-success ${compact ? 'w-2.5 h-2.5' : 'w-3 h-3'}`} />
                     </div>
-                    <span className="text-foreground">{feature}</span>
+                    <span className={`text-foreground ${compact ? 'text-xs' : 'text-sm'}`}>{feature}</span>
                   </div>
                 ))}
-                {plan.notIncluded.map((feature) => (
+                {compact && plan.features.length > 3 && (
+                  <p className="text-xs text-muted-foreground pl-6">+{plan.features.length - 3} more</p>
+                )}
+                {!compact && plan.notIncluded.map((feature) => (
                   <div key={feature} className="flex items-start gap-3 opacity-50">
                     <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-0.5">
                       <span className="text-xs text-muted-foreground">✕</span>
@@ -250,7 +261,7 @@ export const SubscriptionPlans = () => {
               <div className="mt-auto">
                 <Button 
                   variant={plan.buttonVariant} 
-                  size="lg" 
+                  size={compact ? "sm" : "lg"}
                   className="w-full"
                   disabled={subscribing || isCurrentPlan(plan.name)}
                   onClick={() => handleSubscribe(plan.name, plan.price)}
@@ -272,32 +283,36 @@ export const SubscriptionPlans = () => {
                   )}
                 </Button>
 
-                {/* Premium Extras - Always rendered for consistent spacing */}
-                <div className={`flex items-center justify-center gap-4 mt-6 pt-6 border-t border-border ${(plan.popular || plan.name === 'Premium') ? '' : 'invisible'}`}>
-                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <Shield className="w-4 h-4 text-secondary" />
-                    <span>Safe</span>
+                {/* Premium Extras - Hide in compact mode */}
+                {!compact && (
+                  <div className={`flex items-center justify-center gap-4 mt-6 pt-6 border-t border-border ${(plan.popular || plan.name === 'Premium') ? '' : 'invisible'}`}>
+                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                      <Shield className="w-4 h-4 text-secondary" />
+                      <span>Safe</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                      <RefreshCw className="w-4 h-4 text-primary" />
+                      <span>Backup</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <RefreshCw className="w-4 h-4 text-primary" />
-                    <span>Backup</span>
-                  </div>
-                </div>
+                )}
               </div>
             </motion.div>
           ))}
         </div>
 
-        {/* Note */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.4 }}
-          className="text-center text-sm text-muted-foreground mt-8"
-        >
-          * One-time matching fee applies. Worker salary is paid directly to the worker.
-        </motion.p>
+        {/* Note - Hide in compact mode */}
+        {!compact && (
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.4 }}
+            className="text-center text-sm text-muted-foreground mt-8"
+          >
+            * One-time matching fee applies. Worker salary is paid directly to the worker.
+          </motion.p>
+        )}
       </div>
 
       <AuthModal 

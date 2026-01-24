@@ -17,7 +17,7 @@ export const SubscriptionModal = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+      <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -29,22 +29,22 @@ export const SubscriptionModal = ({
 
         {/* Modal */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          className="relative bg-background rounded-3xl shadow-elevated max-w-7xl w-full max-h-[90vh] overflow-y-auto z-10 my-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 20 }}
+          className="relative bg-background rounded-2xl shadow-elevated w-[95vw] max-w-5xl z-10 my-4 sm:my-8 mx-2"
         >
           {/* Close Button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors z-20"
+            className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors z-20"
           >
             <X className="w-5 h-5" />
           </button>
 
-          {/* Content - Using the existing SubscriptionPlans component */}
-          <div className="pt-8">
-            <SubscriptionPlans />
+          {/* Content - Compact version */}
+          <div className="p-4 sm:p-6 max-h-[85vh] overflow-y-auto">
+            <SubscriptionPlans compact />
           </div>
         </motion.div>
       </div>

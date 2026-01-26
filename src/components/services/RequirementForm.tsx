@@ -208,6 +208,14 @@ export const RequirementForm = ({
            hasSubService('full-house');
   };
 
+  const shouldShowPreferredTime = () => {
+    // Hide preferred time for full-time driver and night shift driver (they work specific hours anyway)
+    if (service.id === 'driver' && (hasSubService('full-time') || hasSubService('night-driver'))) {
+      return false;
+    }
+    return true;
+  };
+
   const getServiceIcon = () => {
     switch (service.id) {
       case 'cleaning': return <Home className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />;
@@ -264,11 +272,16 @@ export const RequirementForm = ({
       setIsMatchingWorkers(true);
 
       try {
+        // For full-time driver, use 'flexible' as preferredTime if not set
+        const preferredTimeForMatching = shouldShowPreferredTime() 
+          ? formData.preferredTime 
+          : (service.id === 'driver' && hasSubService('full-time') ? 'flexible' : formData.preferredTime);
+        
         const { data: matchData, error: matchError } = await supabase.functions.invoke('match-workers', {
           body: {
             bookingId: currentBookingId,
             serviceType: service.id,
-            preferredTime: formData.preferredTime,
+            preferredTime: preferredTimeForMatching,
             address: formData.address,
             subServices: selectedSubServices.map(s => ({ id: s.id, name: s.name })),
           },
@@ -311,9 +324,14 @@ export const RequirementForm = ({
     
     try {
       // Build service-specific details
+      // For full-time driver, set preferredTime to 'flexible' if not provided
+      const preferredTimeValue = shouldShowPreferredTime() 
+        ? formData.preferredTime 
+        : (service.id === 'driver' && hasSubService('full-time') ? 'flexible' : formData.preferredTime);
+      
       const serviceDetails = {
         // Common
-        preferredTime: formData.preferredTime,
+        preferredTime: preferredTimeValue,
         startDate: formData.startDate,
         // Service-specific (will be stored in sub_services JSON)
         ...(service.id === 'cleaning' && {
@@ -346,7 +364,7 @@ export const RequirementForm = ({
           serviceDetails,
         },
         house_size: service.id === 'cleaning' && shouldShowHouseSize() && formData.houseSize ? formData.houseSize : (service.id === 'cleaning' ? 'N/A' : 'N/A'),
-        preferred_time: formData.preferredTime,
+        preferred_time: preferredTimeValue,
         start_date: formData.startDate,
         full_name: formData.fullName,
         phone: formData.phone,
@@ -463,7 +481,10 @@ export const RequirementForm = ({
 
   // Service-specific validation for step 1
   const canProceedStep1 = () => {
-    const hasCommon = formData.preferredTime && formData.startDate;
+    // For full-time driver, preferredTime is not required
+    const hasCommon = shouldShowPreferredTime() 
+      ? (formData.preferredTime && formData.startDate)
+      : formData.startDate;
     
     switch (service.id) {
       case 'cleaning':
@@ -876,27 +897,31 @@ export const RequirementForm = ({
                       </>
                     )}
 
-                    {/* Preferred Time - Common to all */}
-                    <Label className="text-sm font-medium mb-2 sm:mb-3 block flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-secondary" />
-                      Preferred Time Slot
-                    </Label>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mb-4 sm:mb-6">
-                      {timeSlots.map((slot) => (
-                        <button
-                          key={slot.id}
-                          onClick={() => handleInputChange('preferredTime', slot.id)}
-                          className={`p-3 sm:p-4 rounded-xl border-2 transition-all text-left ${
-                            formData.preferredTime === slot.id
-                              ? 'border-primary bg-primary/5'
-                              : 'border-border hover:border-primary/50'
-                          }`}
-                        >
-                          <div className="font-medium text-foreground text-sm sm:text-base">{slot.label}</div>
-                          <div className="text-xs text-muted-foreground">{slot.time}</div>
-                        </button>
-                      ))}
-                    </div>
+                    {/* Preferred Time - Common to all, except full-time driver */}
+                    {shouldShowPreferredTime() && (
+                      <>
+                        <Label className="text-sm font-medium mb-2 sm:mb-3 block flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-secondary" />
+                          Preferred Time Slot
+                        </Label>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mb-4 sm:mb-6">
+                          {timeSlots.map((slot) => (
+                            <button
+                              key={slot.id}
+                              onClick={() => handleInputChange('preferredTime', slot.id)}
+                              className={`p-3 sm:p-4 rounded-xl border-2 transition-all text-left ${
+                                formData.preferredTime === slot.id
+                                  ? 'border-primary bg-primary/5'
+                                  : 'border-border hover:border-primary/50'
+                              }`}
+                            >
+                              <div className="font-medium text-foreground text-sm sm:text-base">{slot.label}</div>
+                              <div className="text-xs text-muted-foreground">{slot.time}</div>
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
 
                     {/* Start Date */}
                     <Label className="text-sm font-medium mb-2 sm:mb-3 block flex items-center gap-2">
@@ -1012,12 +1037,14 @@ export const RequirementForm = ({
                         <span className="font-medium text-foreground">{selectedSubServices.length} selected</span>
                       </div>
                       {getServiceSummary()}
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Time Slot</span>
-                        <span className="font-medium text-foreground">
-                          {timeSlots.find(s => s.id === formData.preferredTime)?.label}
-                        </span>
-                      </div>
+                      {shouldShowPreferredTime() && formData.preferredTime && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Time Slot</span>
+                          <span className="font-medium text-foreground">
+                            {timeSlots.find(s => s.id === formData.preferredTime)?.label}
+                          </span>
+                        </div>
+                      )}
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Start Date</span>
                         <span className="font-medium text-foreground">{formData.startDate}</span>

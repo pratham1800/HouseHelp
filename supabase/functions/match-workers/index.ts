@@ -11,6 +11,7 @@ interface MatchRequest {
   preferredTime: string;
   address: string;
   subServices?: { id: string; name: string }[];
+  dietaryPreference?: string;
 }
 
 interface Worker {
@@ -22,6 +23,7 @@ interface Worker {
   years_experience: number | null;
   languages_spoken: string[] | null;
   preferred_areas: string[] | null;
+  residential_address: string | null;
   working_hours: string | null;
   status: string | null;
   gender: string | null;
@@ -36,6 +38,14 @@ const serviceToWorkType: Record<string, string> = {
   'gardening': 'gardening',
 };
 
+// Map dietary preference from booking form to worker subcategory IDs
+const dietaryPreferenceMap: Record<string, string> = {
+  'veg': 'vegetarian',
+  'egg': 'eggitarian',
+  'nonveg': 'non_vegetarian',
+  'jain': 'vegetarian', // Jain maps to vegetarian as it's a subset
+};
+
 // Map preferred time to working hours (matching the worker registration form values)
 const timeToHours: Record<string, string[]> = {
   'morning': ['morning', 'full_day'],
@@ -45,149 +55,183 @@ const timeToHours: Record<string, string[]> = {
   'flexible': ['morning', 'evening', 'full_day'],
 };
 
-// Extract city/location from address
-function extractLocation(address: string): string[] {
+// Common Indian city names and areas for location matching
+const locationKeywords = [
+  // Major cities
+  'delhi', 'new delhi', 'mumbai', 'bangalore', 'bengaluru', 'chennai', 'kolkata',
+  'hyderabad', 'pune', 'ahmedabad', 'jaipur', 'lucknow', 'noida', 'gurgaon',
+  'gurugram', 'chandigarh', 'kochi', 'indore', 'nagpur', 'ghaziabad', 'faridabad',
+  // Delhi NCR areas
+  'dwarka', 'rohini', 'pitampura', 'janakpuri', 'lajpat nagar', 'saket',
+  'greater kailash', 'vasant kunj', 'mayur vihar', 'preet vihar', 'karol bagh',
+  // Bangalore areas
+  'koramangala', 'hsr layout', 'whitefield', 'indiranagar', 'jayanagar',
+  'marathahalli', 'electronic city', 'btm layout', 'jp nagar', 'hebbal',
+  'yelahanka', 'banashankari', 'rajajinagar', 'malleswaram', 'basaveshwaranagar',
+  // Mumbai areas
+  'andheri', 'bandra', 'juhu', 'powai', 'thane', 'navi mumbai', 'malad',
+  'goregaon', 'borivali', 'kandivali', 'dadar', 'lower parel', 'worli',
+];
+
+// Extract locations from address
+function extractLocations(address: string): string[] {
   const normalizedAddress = address.toLowerCase().trim();
-  
-  // Common Indian city names and areas
-  const majorCities = [
-    'delhi', 'mumbai', 'bangalore', 'bengaluru', 'chennai', 'kolkata', 
-    'hyderabad', 'pune', 'ahmedabad', 'jaipur', 'lucknow', 'noida', 
-    'gurgaon', 'gurugram', 'chandigarh', 'kochi', 'indore', 'nagpur',
-    'koramangala', 'hsr layout', 'whitefield', 'indiranagar', 'jayanagar',
-    'marathahalli', 'electronic city', 'btm layout', 'jp nagar', 'hebbal'
-  ];
-  
   const matchedLocations: string[] = [];
-  for (const city of majorCities) {
-    if (normalizedAddress.includes(city)) {
-      matchedLocations.push(city);
+  
+  for (const keyword of locationKeywords) {
+    if (normalizedAddress.includes(keyword)) {
+      matchedLocations.push(keyword);
     }
   }
   
   return matchedLocations;
 }
 
-// Strict filtering: Check if worker has ALL required subcategories
-function workerHasAllSubcategories(
+// Check if worker's location matches employer's location
+function workerMatchesLocation(worker: Worker, employerAddress: string): boolean {
+  const employerLocations = extractLocations(employerAddress);
+  
+  // If we can't determine employer location, don't filter strictly (allow all)
+  if (employerLocations.length === 0) {
+    console.log(`No location keywords found in employer address: "${employerAddress}"`);
+    return true;
+  }
+  
+  // Check worker's preferred_areas
+  if (worker.preferred_areas && worker.preferred_areas.length > 0) {
+    const workerAreas = worker.preferred_areas.map(a => a.toLowerCase());
+    const hasAreaMatch = employerLocations.some(loc => 
+      workerAreas.some(area => area.includes(loc) || loc.includes(area))
+    );
+    if (hasAreaMatch) return true;
+  }
+  
+  // Check worker's residential_address
+  if (worker.residential_address) {
+    const workerLocations = extractLocations(worker.residential_address);
+    const hasResidentialMatch = employerLocations.some(loc => 
+      workerLocations.some(wLoc => wLoc.includes(loc) || loc.includes(wLoc))
+    );
+    if (hasResidentialMatch) return true;
+  }
+  
+  return false;
+}
+
+// Check if worker matches the required subcategories
+function workerMatchesSubcategories(
   worker: Worker,
   serviceType: string,
-  requiredSubcategories?: { id: string; name: string }[]
+  subServices?: { id: string; name: string }[],
+  dietaryPreference?: string
 ): boolean {
-  // If no subcategories are required, all workers pass this filter
-  if (!requiredSubcategories || requiredSubcategories.length === 0) {
+  // If no subcategories required, worker passes
+  if ((!subServices || subServices.length === 0) && !dietaryPreference) {
     return true;
   }
 
-  // Check work type match first
-  const requiredWorkType = serviceToWorkType[serviceType];
-  if (worker.work_type !== requiredWorkType) {
-    return false;
-  }
-
-  // If worker has no subcategories, they don't match
+  // If worker has no subcategories, they don't match specific requirements
   if (!worker.work_subcategories || worker.work_subcategories.length === 0) {
     return false;
   }
 
-  // Worker must have ALL required subcategory IDs
-  const requiredSubcategoryIds = requiredSubcategories.map(s => s.id);
-  const hasAllSubcategories = requiredSubcategoryIds.every(
-    subId => worker.work_subcategories!.includes(subId)
-  );
+  // For cooking service, check dietary preference
+  if (serviceType === 'cooking' && dietaryPreference) {
+    const requiredDietarySubcategory = dietaryPreferenceMap[dietaryPreference];
+    if (requiredDietarySubcategory) {
+      const hasDietaryMatch = worker.work_subcategories.includes(requiredDietarySubcategory);
+      if (!hasDietaryMatch) {
+        console.log(`Worker ${worker.name} doesn't match dietary preference: ${dietaryPreference} -> ${requiredDietarySubcategory}`);
+        return false;
+      }
+    }
+  }
 
-  return hasAllSubcategories;
+  // For cleaning service, check sub-services
+  if (serviceType === 'cleaning' && subServices && subServices.length > 0) {
+    const requiredSubcategoryIds = subServices.map(s => s.id);
+    const hasAllSubcategories = requiredSubcategoryIds.every(
+      subId => worker.work_subcategories!.includes(subId)
+    );
+    if (!hasAllSubcategories) {
+      console.log(`Worker ${worker.name} doesn't have all required cleaning subcategories`);
+      return false;
+    }
+  }
+
+  return true;
 }
 
 function calculateMatchScore(
-  worker: Worker, 
-  serviceType: string, 
-  preferredTime: string, 
+  worker: Worker,
+  serviceType: string,
+  preferredTime: string,
   address: string,
-  subServices?: { id: string; name: string }[]
+  subServices?: { id: string; name: string }[],
+  dietaryPreference?: string
 ): number {
   let score = 0;
   const maxScore = 100;
 
-  // 1. Service Type Match (30 points - reduced to make room for subcategories)
+  // 1. Service Type Match (25 points)
   const requiredWorkType = serviceToWorkType[serviceType];
   if (worker.work_type === requiredWorkType) {
-    score += 30;
+    score += 25;
   }
 
-  // 2. Subcategory Match (20 points) - NEW
-  if (subServices && subServices.length > 0 && worker.work_subcategories && worker.work_subcategories.length > 0) {
-    // IDs match directly, so use booking sub-service IDs to check worker subcategories
-    const requiredSubcategoryIds = subServices.map(s => s.id);
-    
-    // Count how many required subcategories the worker can do
-    const matchedSubcategories = requiredSubcategoryIds.filter(
-      subId => worker.work_subcategories!.includes(subId)
-    );
-    
-    if (matchedSubcategories.length === requiredSubcategoryIds.length) {
-      // Worker can do ALL requested subcategories
-      score += 20;
-    } else if (matchedSubcategories.length > 0) {
-      // Partial match - proportional score
-      score += Math.round((matchedSubcategories.length / requiredSubcategoryIds.length) * 15);
+  // 2. Subcategory Match (25 points)
+  if (worker.work_subcategories && worker.work_subcategories.length > 0) {
+    if (serviceType === 'cooking' && dietaryPreference) {
+      const requiredDietarySubcategory = dietaryPreferenceMap[dietaryPreference];
+      if (requiredDietarySubcategory && worker.work_subcategories.includes(requiredDietarySubcategory)) {
+        score += 25;
+      }
+    } else if (serviceType === 'cleaning' && subServices && subServices.length > 0) {
+      const requiredSubcategoryIds = subServices.map(s => s.id);
+      const matchedCount = requiredSubcategoryIds.filter(
+        subId => worker.work_subcategories!.includes(subId)
+      ).length;
+      score += Math.round((matchedCount / requiredSubcategoryIds.length) * 25);
+    } else {
+      score += 15; // Partial points if no specific subcategories required
     }
-    // No match = 0 points
-  } else if (!subServices || subServices.length === 0) {
-    // If no subcategories requested, give partial points
+  }
+
+  // 3. Location Match (30 points) - Higher priority for nearby workers
+  const employerLocations = extractLocations(address);
+  if (employerLocations.length > 0) {
+    let locationScore = 0;
+    
+    // Check preferred_areas (25 points for area match)
+    if (worker.preferred_areas && worker.preferred_areas.length > 0) {
+      const workerAreas = worker.preferred_areas.map(a => a.toLowerCase());
+      const hasAreaMatch = employerLocations.some(loc => 
+        workerAreas.some(area => area.includes(loc) || loc.includes(area))
+      );
+      if (hasAreaMatch) locationScore = 30;
+    }
+    
+    // Check residential_address (20 points for residential match if no area match)
+    if (locationScore < 30 && worker.residential_address) {
+      const workerLocations = extractLocations(worker.residential_address);
+      const hasResidentialMatch = employerLocations.some(loc => 
+        workerLocations.some(wLoc => wLoc.includes(loc) || loc.includes(wLoc))
+      );
+      if (hasResidentialMatch) locationScore = 25;
+    }
+    
+    score += locationScore;
+  } else {
+    // No location info from employer, give partial score
     score += 10;
   }
 
-  // 3. Availability/Working Hours Match (15 points - adjusted)
+  // 4. Availability/Working Hours Match (10 points)
   const acceptableHours = timeToHours[preferredTime] || timeToHours['flexible'];
   if (worker.working_hours && acceptableHours.includes(worker.working_hours)) {
-    score += 15;
+    score += 10;
   } else if (!worker.working_hours) {
-    // If no preference set, give partial score
-    score += 6;
-  }
-
-  // 4. Location/Area Match (25 points) - PRIORITIZE MANUAL LOCATION INPUT
-  const inputLocations = extractLocation(address);
-  
-  if (inputLocations.length > 0 && worker.preferred_areas && worker.preferred_areas.length > 0) {
-    // Check if worker's preferred areas match any of the input locations
-    const workerAreas = worker.preferred_areas.map(area => area.toLowerCase());
-    
-    // Direct location match gets full points
-    const hasDirectMatch = inputLocations.some(loc => 
-      workerAreas.some(area => area.includes(loc) || loc.includes(area))
-    );
-    
-    if (hasDirectMatch) {
-      score += 25;
-    } else {
-      // Check if address string contains any worker preferred area
-      const addressLower = address.toLowerCase();
-      const areaMatch = worker.preferred_areas.some(area => 
-        addressLower.includes(area.toLowerCase())
-      );
-      if (areaMatch) {
-        score += 20;
-      } else {
-        // No location match - significant penalty
-        score += 0;
-      }
-    }
-  } else if (worker.preferred_areas && worker.preferred_areas.length > 0) {
-    // No specific location in input, check general area match
-    const addressLower = address.toLowerCase();
-    const areaMatch = worker.preferred_areas.some(area => 
-      addressLower.includes(area.toLowerCase())
-    );
-    if (areaMatch) {
-      score += 20;
-    } else {
-      score += 5;
-    }
-  } else {
-    // Workers with no area preference get partial score (more flexible)
-    score += 8;
+    score += 5;
   }
 
   // 5. Experience Bonus (10 points)
@@ -217,63 +261,103 @@ Deno.serve(async (req) => {
 
     const { bookingId, serviceType, preferredTime, address, subServices }: MatchRequest = await req.json();
 
-    console.log('Matching workers for booking:', bookingId);
-    console.log('Service type:', serviceType, 'Preferred time:', preferredTime, 'Address:', address);
-    console.log('Sub-services requested:', subServices);
-    console.log('Extracted locations from address:', extractLocation(address));
+    console.log('=== Worker Matching Request ===');
+    console.log('Booking ID:', bookingId);
+    console.log('Service type:', serviceType);
+    console.log('Preferred time:', preferredTime);
+    console.log('Address:', address);
+    console.log('Sub-services:', JSON.stringify(subServices));
 
-    // Get all verified workers (status can be 'verified' or 'Verified')
+    // Extract dietary preference from sub-services for cooking
+    let dietaryPreference: string | undefined;
+    if (serviceType === 'cooking') {
+      // Try to get dietary preference from booking details
+      const { data: bookingData } = await supabase
+        .from('bookings')
+        .select('sub_services')
+        .eq('id', bookingId)
+        .single();
+      
+      if (bookingData?.sub_services) {
+        const subServicesData = bookingData.sub_services as { serviceDetails?: { dietaryPreference?: string } };
+        dietaryPreference = subServicesData.serviceDetails?.dietaryPreference;
+        console.log('Dietary preference from booking:', dietaryPreference);
+      }
+    }
+
+    const extractedLocations = extractLocations(address);
+    console.log('Extracted locations from address:', extractedLocations);
+
+    // Get the required work type
+    const requiredWorkType = serviceToWorkType[serviceType];
+    console.log('Required work type:', requiredWorkType);
+
+    // Get all verified workers of the required work type
     const { data: workers, error: workersError } = await supabase
       .from('workers')
       .select('*')
+      .eq('work_type', requiredWorkType)
       .or('status.eq.verified,status.eq.Verified')
-      .is('assigned_customer_id', null); // Only unassigned workers
+      .is('assigned_customer_id', null);
 
     if (workersError) {
       console.error('Error fetching workers:', workersError);
       throw workersError;
     }
 
-    console.log(`Found ${workers?.length || 0} verified, unassigned workers`);
+    console.log(`Found ${workers?.length || 0} verified, unassigned workers of type ${requiredWorkType}`);
 
     if (!workers || workers.length === 0) {
       return new Response(
-        JSON.stringify({ 
-          success: true, 
+        JSON.stringify({
+          success: true,
           matchedWorkers: [],
-          message: 'No available workers found' 
+          message: 'No available workers found for this service type'
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // STRICT FILTERING: Only include workers who have ALL required subcategories
-    const eligibleWorkers = workers.filter(worker => 
-      workerHasAllSubcategories(worker, serviceType, subServices)
-    );
+    // STRICT FILTERING: Apply all filters
+    const eligibleWorkers = workers.filter(worker => {
+      // 1. Location filter - STRICT
+      const locationMatch = workerMatchesLocation(worker, address);
+      if (!locationMatch) {
+        console.log(`Worker ${worker.name} filtered out: Location mismatch`);
+        return false;
+      }
 
-    console.log(`After strict subcategory filtering: ${eligibleWorkers.length} eligible workers out of ${workers.length} total`);
+      // 2. Subcategory filter - STRICT
+      const subcategoryMatch = workerMatchesSubcategories(worker, serviceType, subServices, dietaryPreference);
+      if (!subcategoryMatch) {
+        console.log(`Worker ${worker.name} filtered out: Subcategory mismatch`);
+        return false;
+      }
+
+      return true;
+    });
+
+    console.log(`After strict filtering: ${eligibleWorkers.length} eligible workers`);
 
     if (eligibleWorkers.length === 0) {
       return new Response(
-        JSON.stringify({ 
-          success: true, 
+        JSON.stringify({
+          success: true,
           matchedWorkers: [],
-          message: 'No workers found matching the required subcategories' 
+          message: 'No workers found matching your location and service requirements'
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Calculate match scores only for eligible workers
+    // Calculate match scores for eligible workers
     const workersWithScores = eligibleWorkers.map(worker => ({
       ...worker,
-      match_score: calculateMatchScore(worker, serviceType, preferredTime, address, subServices),
+      match_score: calculateMatchScore(worker, serviceType, preferredTime, address, subServices, dietaryPreference),
     }));
 
     // Sort by match score and get top 5
     const topWorkers = workersWithScores
-      .filter(w => w.match_score > 0) // Only workers with some match
       .sort((a, b) => (b.match_score || 0) - (a.match_score || 0))
       .slice(0, 5)
       .map(worker => ({
@@ -291,17 +375,18 @@ Deno.serve(async (req) => {
       }));
 
     console.log(`Returning ${topWorkers.length} matched workers`);
-    console.log('Top workers with subcategories:', topWorkers.map(w => ({ 
-      name: w.name, 
+    console.log('Top workers:', topWorkers.map(w => ({
+      name: w.name,
       subcategories: w.work_subcategories,
-      score: w.match_score 
+      areas: w.preferred_areas,
+      score: w.match_score
     })));
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         matchedWorkers: topWorkers,
-        message: `Found ${topWorkers.length} matching workers` 
+        message: `Found ${topWorkers.length} matching workers`
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
@@ -309,14 +394,14 @@ Deno.serve(async (req) => {
     console.error('Error in match-workers function:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return new Response(
-      JSON.stringify({ 
-        success: false, 
+      JSON.stringify({
+        success: false,
         error: errorMessage,
-        matchedWorkers: [] 
+        matchedWorkers: []
       }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
   }

@@ -134,7 +134,7 @@ export const OwnerAuth = ({ onClose }: OwnerAuthProps) => {
             }}
           >
             <Home className="w-4 h-4 mr-2" />
-            Explore Services
+            Book Now
           </Button>
         </div>
       ) : (

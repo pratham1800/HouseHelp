@@ -17,7 +17,8 @@ import {
   Clock,
   Shield,
   Star,
-  Calendar
+  Calendar,
+  LocateFixed
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +31,7 @@ import { VerificationModal } from '@/components/VerificationModal';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useToast } from '@/hooks/use-toast';
+import { useLocation } from '@/hooks/useLocation';
 import { supabase } from '@/integrations/supabase/client';
 import {
   AlertDialog,
@@ -66,6 +68,7 @@ const WorkerProfile = () => {
   const { user, loading: authLoading } = useAuth();
   const { t, language } = useLanguage();
   const { toast } = useToast();
+  const { fetchLocation, loading: locationLoading } = useLocation();
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -524,22 +527,43 @@ const WorkerProfile = () => {
                       {language === 'hi' ? 'आवासीय पता' : language === 'kn' ? 'ವಾಸದ ವಿಳಾಸ' : language === 'mr' ? 'निवासी पत्ता' : 'Residential Address'}
                     </Label>
                     {editingField === 'address' ? (
-                      <div className="relative">
-                        <Textarea
-                          value={formData.address}
-                          onChange={(e) => handleAddressChange(e.target.value)}
-                          placeholder="Enter your address"
-                          rows={3}
-                          className="pr-10"
-                          autoFocus
-                        />
-                        <button
+                      <div className="space-y-2">
+                        <div className="relative">
+                          <Textarea
+                            value={formData.address}
+                            onChange={(e) => handleAddressChange(e.target.value)}
+                            placeholder="Enter your address"
+                            rows={3}
+                            className="pr-10"
+                            autoFocus
+                          />
+                          <button
+                            type="button"
+                            onClick={cancelEditing}
+                            className="absolute right-2 top-2 p-1 hover:bg-muted rounded-md"
+                          >
+                            <X className="w-4 h-4 text-muted-foreground" />
+                          </button>
+                        </div>
+                        <Button
                           type="button"
-                          onClick={cancelEditing}
-                          className="absolute right-2 top-2 p-1 hover:bg-muted rounded-md"
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => {
+                            const loc = await fetchLocation();
+                            if (loc) {
+                              handleAddressChange(loc.address);
+                            }
+                          }}
+                          disabled={locationLoading}
                         >
-                          <X className="w-4 h-4 text-muted-foreground" />
-                        </button>
+                          {locationLoading ? (
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          ) : (
+                            <LocateFixed className="w-4 h-4 mr-2" />
+                          )}
+                          {language === 'hi' ? 'स्थान पता लगाएं' : language === 'kn' ? 'ಸ್ಥಳವನ್ನು ಕಂಡುಹಿಡಿಯಿರಿ' : language === 'mr' ? 'स्थान शोधा' : 'Detect Location'}
+                        </Button>
                       </div>
                     ) : (
                       <div className="flex items-center justify-between p-4 bg-muted/30 rounded-xl min-h-[80px]">

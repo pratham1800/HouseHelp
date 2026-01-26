@@ -55,12 +55,27 @@ const timeToHours: Record<string, string[]> = {
   'flexible': ['morning', 'evening', 'full_day'],
 };
 
-// Common Indian city names and areas for location matching
-const locationKeywords = [
-  // Major cities
+// Major cities for city-level matching
+const majorCities = [
   'delhi', 'new delhi', 'mumbai', 'bangalore', 'bengaluru', 'chennai', 'kolkata',
   'hyderabad', 'pune', 'ahmedabad', 'jaipur', 'lucknow', 'noida', 'gurgaon',
   'gurugram', 'chandigarh', 'kochi', 'indore', 'nagpur', 'ghaziabad', 'faridabad',
+];
+
+// City aliases (map variations to canonical names)
+const cityAliases: Record<string, string> = {
+  'bengaluru': 'bangalore',
+  'bangalore': 'bangalore',
+  'new delhi': 'delhi',
+  'delhi': 'delhi',
+  'gurugram': 'gurgaon',
+  'gurgaon': 'gurgaon',
+};
+
+// Common Indian city names and areas for location matching
+const locationKeywords = [
+  // Major cities
+  ...majorCities,
   // Delhi NCR areas
   'dwarka', 'rohini', 'pitampura', 'janakpuri', 'lajpat nagar', 'saket',
   'greater kailash', 'vasant kunj', 'mayur vihar', 'preet vihar', 'karol bagh',
@@ -68,10 +83,43 @@ const locationKeywords = [
   'koramangala', 'hsr layout', 'whitefield', 'indiranagar', 'jayanagar',
   'marathahalli', 'electronic city', 'btm layout', 'jp nagar', 'hebbal',
   'yelahanka', 'banashankari', 'rajajinagar', 'malleswaram', 'basaveshwaranagar',
+  'panathur', 'kadabeesanahalli', 'bellandur', 'sarjapur',
   // Mumbai areas
   'andheri', 'bandra', 'juhu', 'powai', 'thane', 'navi mumbai', 'malad',
   'goregaon', 'borivali', 'kandivali', 'dadar', 'lower parel', 'worli',
 ];
+
+// Extract city from address string
+function extractCityFromAddress(address: string): string | null {
+  const normalizedAddress = address.toLowerCase().trim();
+  
+  for (const city of majorCities) {
+    if (normalizedAddress.includes(city)) {
+      return cityAliases[city] || city;
+    }
+  }
+  
+  return null;
+}
+
+// Extract city from worker's preferred_areas or residential_address
+function extractWorkerCity(worker: Worker): string | null {
+  // Check preferred_areas first
+  if (worker.preferred_areas && worker.preferred_areas.length > 0) {
+    for (const area of worker.preferred_areas) {
+      const city = extractCityFromAddress(area);
+      if (city) return city;
+    }
+  }
+  
+  // Check residential_address
+  if (worker.residential_address) {
+    const city = extractCityFromAddress(worker.residential_address);
+    if (city) return city;
+  }
+  
+  return null;
+}
 
 // Extract locations from address
 function extractLocations(address: string): string[] {
@@ -318,33 +366,75 @@ Deno.serve(async (req) => {
       );
     }
 
-    // STRICT FILTERING: Apply all filters
-    const eligibleWorkers = workers.filter(worker => {
-      // 1. Location filter - STRICT
-      const locationMatch = workerMatchesLocation(worker, address);
-      if (!locationMatch) {
-        console.log(`Worker ${worker.name} filtered out: Location mismatch`);
-        return false;
-      }
-
-      // 2. Subcategory filter - STRICT
+// First filter by subcategory (strict requirement)
+    const subcategoryMatchedWorkers = workers.filter(worker => {
       const subcategoryMatch = workerMatchesSubcategories(worker, serviceType, subServices, dietaryPreference);
       if (!subcategoryMatch) {
         console.log(`Worker ${worker.name} filtered out: Subcategory mismatch`);
         return false;
       }
-
       return true;
     });
 
-    console.log(`After strict filtering: ${eligibleWorkers.length} eligible workers`);
+    console.log(`After subcategory filtering: ${subcategoryMatchedWorkers.length} workers`);
+
+    if (subcategoryMatchedWorkers.length === 0) {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          matchedWorkers: [],
+          message: 'No workers found matching your service requirements'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // TIERED LOCATION MATCHING:
+    // Tier 1: Exact location match (neighborhood/area level)
+    // Tier 2: Same city match (fallback if no exact matches)
+    
+    const exactLocationWorkers = subcategoryMatchedWorkers.filter(worker => 
+      workerMatchesLocation(worker, address)
+    );
+    
+    console.log(`Tier 1 (exact location): ${exactLocationWorkers.length} workers`);
+
+    let eligibleWorkers: Worker[];
+    
+    if (exactLocationWorkers.length > 0) {
+      // Use exact location matches
+      eligibleWorkers = exactLocationWorkers;
+      console.log('Using Tier 1: Exact location matches');
+    } else {
+      // Fallback to same city matches
+      const employerCity = extractCityFromAddress(address);
+      console.log(`No exact matches. Falling back to city-level matching. Employer city: ${employerCity}`);
+      
+      if (employerCity) {
+        const cityWorkers = subcategoryMatchedWorkers.filter(worker => {
+          const workerCity = extractWorkerCity(worker);
+          const cityMatch = workerCity === employerCity;
+          if (cityMatch) {
+            console.log(`Worker ${worker.name} matches city: ${workerCity}`);
+          }
+          return cityMatch;
+        });
+        
+        console.log(`Tier 2 (same city): ${cityWorkers.length} workers`);
+        eligibleWorkers = cityWorkers;
+      } else {
+        // If we can't determine city, return all subcategory-matched workers
+        console.log('Could not determine employer city, using all subcategory-matched workers');
+        eligibleWorkers = subcategoryMatchedWorkers;
+      }
+    }
 
     if (eligibleWorkers.length === 0) {
       return new Response(
         JSON.stringify({
           success: true,
           matchedWorkers: [],
-          message: 'No workers found matching your location and service requirements'
+          message: 'No workers found in your area matching your service requirements'
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );

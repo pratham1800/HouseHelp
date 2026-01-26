@@ -213,8 +213,8 @@ export default function WorkerRegistration() {
         description: 'Your profile has been created and verified. You can now start receiving bookings!',
       });
 
-      // Redirect to worker dashboard
-      navigate('/for-workers/dashboard');
+      // Redirect to workers portal homepage
+      navigate('/for-workers');
 
     } catch (error: any) {
       console.error('Error registering worker:', error);

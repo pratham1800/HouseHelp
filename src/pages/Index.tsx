@@ -8,7 +8,6 @@ import { Testimonials } from '@/components/Testimonials';
 import { SubscriptionPlans } from '@/components/SubscriptionPlans';
 import { CTASection } from '@/components/CTASection';
 import { Footer } from '@/components/Footer';
-import { WhatsAppButton } from '@/components/WhatsAppButton';
 
 const Index = () => {
   return (
@@ -25,7 +24,6 @@ const Index = () => {
         <CTASection />
       </main>
       <Footer />
-      <WhatsAppButton />
     </div>
   );
 };

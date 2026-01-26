@@ -193,6 +193,21 @@ export default function WorkerRegistration() {
 
       if (authError) throw authError;
 
+      // Also update the profiles table with location, phone, and address
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          phone: formData.phone,
+          address: formData.residentialAddress || null,
+          location: formData.residentialAddress || null,
+        }, { onConflict: 'id' });
+
+      if (profileError) {
+        console.error('Profile update error:', profileError);
+        // Non-blocking - don't throw, just log
+      }
+
       toast({
         title: 'Worker Registered!',
         description: 'Your profile has been created and verified. You can now start receiving bookings!',

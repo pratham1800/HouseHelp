@@ -33,6 +33,7 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'login' }: AuthModalP
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [generalError, setGeneralError] = useState<string>('');
   
   const { signIn, signUp, signInWithGoogle } = useAuth();
   const { toast } = useToast();
@@ -42,6 +43,7 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'login' }: AuthModalP
     setPassword('');
     setFullName('');
     setErrors({});
+    setGeneralError('');
   };
 
   // Sync mode with defaultMode when modal opens or defaultMode changes
@@ -52,6 +54,7 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'login' }: AuthModalP
       setPassword('');
       setFullName('');
       setErrors({});
+      setGeneralError('');
     }
   }, [isOpen, defaultMode]);
 
@@ -63,11 +66,13 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'login' }: AuthModalP
   const handleModeSwitch = (newMode: 'login' | 'signup') => {
     setMode(newMode);
     setErrors({});
+    setGeneralError('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
+    setGeneralError('');
     setLoading(true);
 
     try {
@@ -87,19 +92,11 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'login' }: AuthModalP
 
         const { error } = await signIn(email, password);
         if (error) {
-          if (error.message.includes('Invalid login credentials')) {
-            toast({
-              title: 'Login Failed',
-              description: 'Invalid email or password. Please try again.',
-              variant: 'destructive',
-            });
-          } else {
-            toast({
-              title: 'Login Failed',
-              description: error.message,
-              variant: 'destructive',
-            });
-          }
+          const errorMessage = error.message.includes('Invalid login credentials')
+            ? 'Invalid email or password. Please try again.'
+            : error.message;
+          setGeneralError(errorMessage);
+          setErrors({ password: errorMessage });
         } else {
           toast({
             title: 'Welcome back!',
@@ -124,18 +121,14 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'login' }: AuthModalP
         // Sign up as 'owner' since this is the owner portal modal
         const { error } = await signUp(email, password, fullName, 'owner');
         if (error) {
+          const errorMessage = error.message.includes('User already registered')
+            ? 'An account with this email already exists. Please login instead.'
+            : error.message;
+          setGeneralError(errorMessage);
           if (error.message.includes('User already registered')) {
-            toast({
-              title: 'Account Exists',
-              description: 'An account with this email already exists. Please login instead.',
-              variant: 'destructive',
-            });
+            setErrors({ email: errorMessage });
           } else {
-            toast({
-              title: 'Sign Up Failed',
-              description: error.message,
-              variant: 'destructive',
-            });
+            setErrors({ email: errorMessage });
           }
         } else {
           toast({
@@ -216,6 +209,12 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'login' }: AuthModalP
             {/* Form */}
             <div className="px-8 pb-8">
               <form onSubmit={handleSubmit} className="space-y-4">
+                {/* General Error Message */}
+                {generalError && (
+                  <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                    <p className="text-destructive text-sm text-center">{generalError}</p>
+                  </div>
+                )}
                 {mode === 'signup' && (
                   <div>
                     <Label htmlFor="fullName" className="text-foreground">Full Name</Label>

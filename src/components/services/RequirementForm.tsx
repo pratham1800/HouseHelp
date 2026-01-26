@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Home, Clock, Calendar, User, Phone, Mail, MessageSquare, ArrowRight, CheckCircle, CreditCard, Users, Utensils, Car, Flower2 } from 'lucide-react';
+import { X, Home, Clock, Calendar, User, Phone, Mail, MessageSquare, ArrowRight, CheckCircle, CreditCard, Users, Utensils, Car, Flower2, LocateFixed, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { WorkerMatchModal } from './WorkerMatchModal';
+import { useLocation } from '@/hooks/useLocation';
 
 interface RequirementFormProps {
   isOpen: boolean;
@@ -137,6 +138,7 @@ export const RequirementForm = ({
   const { toast } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { fetchLocation, loading: locationLoading } = useLocation();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showMatchModal, setShowMatchModal] = useState(false);
@@ -145,6 +147,7 @@ export const RequirementForm = ({
   const [currentBookingId, setCurrentBookingId] = useState<string | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [paymentCompleted, setPaymentCompleted] = useState(false);
+  const [hasAttemptedLocationFetch, setHasAttemptedLocationFetch] = useState(false);
 
   const [formData, setFormData] = useState({
     // Common fields
@@ -173,6 +176,64 @@ export const RequirementForm = ({
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Auto-fetch location when entering step 2 (contact details) if address is empty
+  useEffect(() => {
+    const autoFetchLocation = async () => {
+      if (step === 2 && !formData.address && !hasAttemptedLocationFetch && user) {
+        setHasAttemptedLocationFetch(true);
+        
+        // First check if user already has location in profile
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('location, address')
+          .eq('id', user.id)
+          .single();
+        
+        if (profile?.address) {
+          // Use existing address from profile
+          handleInputChange('address', profile.address);
+        } else if (profile?.location) {
+          // Use location as address if address not set
+          handleInputChange('address', profile.location);
+        } else {
+          // No location in profile, auto-detect it
+          const locationData = await fetchLocation();
+          if (locationData) {
+            handleInputChange('address', locationData.address);
+            
+            // Save to profile for future use
+            await supabase
+              .from('profiles')
+              .upsert({
+                id: user.id,
+                location: locationData.address,
+              }, { onConflict: 'id' });
+          }
+        }
+      }
+    };
+    
+    autoFetchLocation();
+  }, [step, formData.address, hasAttemptedLocationFetch, user, fetchLocation]);
+
+  // Manual location fetch handler
+  const handleManualLocationFetch = async () => {
+    const locationData = await fetchLocation();
+    if (locationData) {
+      handleInputChange('address', locationData.address);
+      
+      // Save to profile for future use
+      if (user) {
+        await supabase
+          .from('profiles')
+          .upsert({
+            id: user.id,
+            location: locationData.address,
+          }, { onConflict: 'id' });
+      }
+    }
   };
 
   // Helper functions to determine which fields to show based on selected sub-services
@@ -996,15 +1057,36 @@ export const RequirementForm = ({
                   </div>
 
                   <div>
-                    <Label htmlFor="address" className="text-sm font-medium mb-2 block">
-                      Complete Address
+                    <Label htmlFor="address" className="text-sm font-medium mb-2 block flex items-center justify-between">
+                      <span>Complete Address</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleManualLocationFetch}
+                        disabled={locationLoading}
+                        className="text-xs gap-1 h-7 px-2"
+                      >
+                        {locationLoading ? (
+                          <>
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            Detecting...
+                          </>
+                        ) : (
+                          <>
+                            <LocateFixed className="w-3 h-3" />
+                            Auto-detect
+                          </>
+                        )}
+                      </Button>
                     </Label>
                     <Textarea
                       id="address"
-                      placeholder="Enter your full address including landmark"
+                      placeholder={locationLoading ? "Detecting your location..." : "Enter your full address including landmark"}
                       value={formData.address}
                       onChange={(e) => handleInputChange('address', e.target.value)}
                       rows={3}
+                      disabled={locationLoading}
                     />
                   </div>
                 </motion.div>

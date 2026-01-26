@@ -227,8 +227,8 @@ export const SubscriptionPlans = ({ compact = false, onPlanSelected }: Subscript
               {/* Popular Badge */}
               {plan.popular && !isCurrentPlan(plan.name) && (
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                  <div className="flex items-center gap-1.5 bg-gradient-to-r from-primary to-accent px-4 py-1.5 rounded-full">
-                    <Star className="w-4 h-4 text-white fill-white" />
+                  <div className="flex items-center justify-center gap-1.5 bg-gradient-to-r from-primary to-accent px-4 py-1.5 rounded-full whitespace-nowrap">
+                    <Star className="w-4 h-4 text-white fill-white flex-shrink-0" />
                     <span className="text-sm font-semibold text-white">Most Popular</span>
                   </div>
                 </div>

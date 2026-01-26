@@ -9,7 +9,8 @@ import {
   Save, 
   Loader2, 
   ArrowLeft,
-  AlertTriangle
+  AlertTriangle,
+  LocateFixed
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +19,7 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useLocation } from '@/hooks/useLocation';
 import { supabase } from '@/integrations/supabase/client';
 import {
   AlertDialog,
@@ -42,6 +44,7 @@ const Profile = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
+  const { fetchLocation, loading: locationLoading } = useLocation();
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -267,12 +270,37 @@ const Profile = () => {
                     <MapPin className="w-4 h-4 text-muted-foreground" />
                     Location
                   </Label>
-                  <Input
-                    id="location"
-                    value={formData.location}
-                    onChange={(e) => handleLocationChange(e.target.value)}
-                    placeholder="Enter your area/locality"
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      id="location"
+                      value={formData.location}
+                      onChange={(e) => handleLocationChange(e.target.value)}
+                      placeholder="Enter your area/locality"
+                      className="flex-1"
+                    />
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="icon"
+                      onClick={async () => {
+                        const loc = await fetchLocation();
+                        if (loc) {
+                          handleLocationChange(loc.address);
+                        }
+                      }}
+                      disabled={locationLoading}
+                      title="Auto-detect location"
+                    >
+                      {locationLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <LocateFixed className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Click the location icon to auto-detect your current location
+                  </p>
                 </div>
               </div>
 

@@ -87,19 +87,10 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'login' }: AuthModalP
 
         const { error } = await signIn(email, password);
         if (error) {
-          if (error.message.includes('Invalid login credentials')) {
-            toast({
-              title: 'Login Failed',
-              description: 'Invalid email or password. Please try again.',
-              variant: 'destructive',
-            });
-          } else {
-            toast({
-              title: 'Login Failed',
-              description: error.message,
-              variant: 'destructive',
-            });
-          }
+          const errorMessage = error.message.includes('Invalid login credentials')
+            ? 'Invalid email or password.'
+            : error.message;
+          setErrors({ password: errorMessage });
         } else {
           toast({
             title: 'Welcome back!',
@@ -124,19 +115,10 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'login' }: AuthModalP
         // Sign up as 'owner' since this is the owner portal modal
         const { error } = await signUp(email, password, fullName, 'owner');
         if (error) {
-          if (error.message.includes('User already registered')) {
-            toast({
-              title: 'Account Exists',
-              description: 'An account with this email already exists. Please login instead.',
-              variant: 'destructive',
-            });
-          } else {
-            toast({
-              title: 'Sign Up Failed',
-              description: error.message,
-              variant: 'destructive',
-            });
-          }
+          const errorMessage = error.message.includes('User already registered')
+            ? 'An account with this email already exists. Please login instead.'
+            : error.message;
+          setErrors({ email: errorMessage });
         } else {
           toast({
             title: 'Welcome to GharSeva!',

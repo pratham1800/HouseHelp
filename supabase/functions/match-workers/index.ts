@@ -68,6 +68,37 @@ function extractLocation(address: string): string[] {
   return matchedLocations;
 }
 
+// Strict filtering: Check if worker has ALL required subcategories
+function workerHasAllSubcategories(
+  worker: Worker,
+  serviceType: string,
+  requiredSubcategories?: { id: string; name: string }[]
+): boolean {
+  // If no subcategories are required, all workers pass this filter
+  if (!requiredSubcategories || requiredSubcategories.length === 0) {
+    return true;
+  }
+
+  // Check work type match first
+  const requiredWorkType = serviceToWorkType[serviceType];
+  if (worker.work_type !== requiredWorkType) {
+    return false;
+  }
+
+  // If worker has no subcategories, they don't match
+  if (!worker.work_subcategories || worker.work_subcategories.length === 0) {
+    return false;
+  }
+
+  // Worker must have ALL required subcategory IDs
+  const requiredSubcategoryIds = requiredSubcategories.map(s => s.id);
+  const hasAllSubcategories = requiredSubcategoryIds.every(
+    subId => worker.work_subcategories!.includes(subId)
+  );
+
+  return hasAllSubcategories;
+}
+
 function calculateMatchScore(
   worker: Worker, 
   serviceType: string, 
@@ -216,8 +247,26 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Calculate match scores for all workers
-    const workersWithScores = workers.map(worker => ({
+    // STRICT FILTERING: Only include workers who have ALL required subcategories
+    const eligibleWorkers = workers.filter(worker => 
+      workerHasAllSubcategories(worker, serviceType, subServices)
+    );
+
+    console.log(`After strict subcategory filtering: ${eligibleWorkers.length} eligible workers out of ${workers.length} total`);
+
+    if (eligibleWorkers.length === 0) {
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          matchedWorkers: [],
+          message: 'No workers found matching the required subcategories' 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Calculate match scores only for eligible workers
+    const workersWithScores = eligibleWorkers.map(worker => ({
       ...worker,
       match_score: calculateMatchScore(worker, serviceType, preferredTime, address, subServices),
     }));

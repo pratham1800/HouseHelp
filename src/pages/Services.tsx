@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, ShoppingCart, Sparkles, Star, Clock, IndianRupee } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
-import { WhatsAppButton } from '@/components/WhatsAppButton';
 import { Button } from '@/components/ui/button';
 import { SubServiceCard } from '@/components/services/SubServiceCard';
 import { RequirementForm } from '@/components/services/RequirementForm';
@@ -115,7 +114,6 @@ const ServiceSelector = () => {
         </div>
       </main>
       <Footer />
-      <WhatsAppButton />
     </div>
   );
 };
@@ -306,7 +304,6 @@ const ServiceDetailPage = ({ service }: { service: Service }) => {
         />
       </main>
       <Footer />
-      <WhatsAppButton offsetBottom={selectedSubServices.length > 0} />
     </div>
   );
 };

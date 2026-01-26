@@ -214,7 +214,7 @@ export default function WorkerRegistration() {
       });
 
       // Redirect to workers portal homepage
-      navigate('/for-workers');
+      navigate('/for-workers', { replace: true });
 
     } catch (error: any) {
       console.error('Error registering worker:', error);

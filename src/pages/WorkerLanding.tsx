@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import { 
   MapPin, 
   Clock, 
@@ -104,6 +105,11 @@ export default function WorkerLanding() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { language } = useLanguage();
+
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
 
   const getStatLabel = (stat: typeof stats[0]) => {
     switch (language) {

@@ -92,7 +92,7 @@ export const WorkerNavbar = () => {
             onClick={handleOwnerPortalClick}
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors border-l border-border pl-6"
           >
-            For Owners →
+            For Employers →
           </button>
         </div>
 

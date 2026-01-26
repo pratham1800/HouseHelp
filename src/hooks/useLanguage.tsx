@@ -18,7 +18,7 @@ export const translations: Translations = {
   howItWorks: { en: 'How It Works', hi: 'यह कैसे काम करता है', kn: 'ಇದು ಹೇಗೆ ಕಾರ್ಯನಿರ್ವಹಿಸುತ್ತದೆ', mr: 'हे कसे कार्य करते' },
   subscription: { en: 'Subscription', hi: 'सदस्यता', kn: 'ಚಂದಾದಾರಿಕೆ', mr: 'सदस्यता' },
   forWorkers: { en: 'For Workers', hi: 'श्रमिकों के लिए', kn: 'ಕಾರ್ಮಿಕರಿಗಾಗಿ', mr: 'कामगारांसाठी' },
-  forOwners: { en: 'For Owners', hi: 'मालिकों के लिए', kn: 'ಮಾಲೀಕರಿಗಾಗಿ', mr: 'मालकांसाठी' },
+  forOwners: { en: 'For Employers', hi: 'नियोक्ताओं के लिए', kn: 'ನಿಯೋಜಕರಿಗಾಗಿ', mr: 'नियोक्त्यांसाठी' },
   aboutUs: { en: 'About Us', hi: 'हमारे बारे में', kn: 'ನಮ್ಮ ಬಗ್ಗೆ', mr: 'आमच्याबद्दल' },
   login: { en: 'Login', hi: 'लॉगिन', kn: 'ಲಾಗಿನ್', mr: 'लॉगिन' },
   signUp: { en: 'Sign Up', hi: 'साइन अप', kn: 'ಸೈನ್ ಅಪ್', mr: 'साइन अप' },

@@ -49,9 +49,6 @@ export const HeroSection = () => {
                 Book Now
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
-              <Button type="button" variant="outline" size="xl" onClick={() => navigate('/services')}>
-                Explore Services
-              </Button>
             </div>
 
             {/* Quick Stats */}

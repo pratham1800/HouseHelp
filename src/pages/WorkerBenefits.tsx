@@ -188,10 +188,10 @@ export default function WorkerBenefits() {
                   <Button 
                     variant="hero" 
                     className="w-full"
-                    onClick={() => window.open('https://wa.me/919876543210', '_blank')}
+                    onClick={() => window.open('https://wa.me/918272091007', '_blank')}
                   >
                     <Phone className="w-4 h-4 mr-2" />
-                    WhatsApp: +91 98765 43210
+                    WhatsApp: +91 8272091007
                   </Button>
                   <p className="text-center text-sm text-muted-foreground">
                     Available Mon-Sat, 9 AM - 6 PM

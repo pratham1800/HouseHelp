@@ -33,7 +33,7 @@ For workers:
 - Earn bonuses and awards
 - Health and accident insurance
 
-Be helpful, concise, and friendly. If you don't know something specific about a user's booking, politely suggest they check their dashboard or contact WhatsApp support at +91 98765 43210.`;
+Be helpful, concise, and friendly. If you don't know something specific about a user's booking, politely suggest they check their dashboard or contact WhatsApp support at +91 8272091007.`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -80,7 +80,7 @@ Earnings & Bonuses:
 - "Worker of the Month" award with ₹1000 bonus
 - Festival bonuses during Diwali, Holi
 
-Be helpful, concise, and friendly. Speak simply as many workers may not be fluent in English. If you don't know something specific, suggest they contact WhatsApp support at +91 98765 43210.`;
+Be helpful, concise, and friendly. Speak simply as many workers may not be fluent in English. If you don't know something specific, suggest they contact WhatsApp support at +91 8272091007.`;
     }
 
     console.log("Calling Lovable AI gateway with", messages.length, "messages, context:", context || 'owner');

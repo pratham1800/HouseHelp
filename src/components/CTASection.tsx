@@ -36,7 +36,7 @@ export const CTASection = () => {
               variant="whatsapp"
               size="xl"
               className="font-bold"
-              onClick={() => window.open('https://wa.me/919876543210?text=Hi! I want to know more about GharSeva home help services.', '_blank')}
+              onClick={() => window.open('https://wa.me/918272091007?text=Hi! I want to know more about GharSeva home help services.', '_blank')}
             >
               <MessageCircle className="w-5 h-5" />
               Chat on WhatsApp

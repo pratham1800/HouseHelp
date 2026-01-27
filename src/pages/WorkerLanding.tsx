@@ -435,7 +435,7 @@ export default function WorkerLanding() {
                 variant="secondary" 
                 size="xl"
                 className="bg-white text-primary hover:bg-white/90"
-                onClick={() => window.open('https://wa.me/919876543210?text=Hi, I want to register as a worker', '_blank')}
+                onClick={() => window.open('https://wa.me/918272091007?text=Hi, I want to register as a worker', '_blank')}
               >
                 {getText('contactWhatsApp')}
                 <ArrowRight className="w-5 h-5 ml-2" />

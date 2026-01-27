@@ -8,7 +8,7 @@ interface WhatsAppButtonProps {
 
 export const WhatsAppButton = ({ 
   offsetBottom = false,
-  phoneNumber = '919876543210', // Replace with actual number
+  phoneNumber = '918272091007', // Replace with actual number
   message = 'Hi! I want to know more about GharSeva home help services.'
 }: WhatsAppButtonProps) => {
   const encodedMessage = encodeURIComponent(message);

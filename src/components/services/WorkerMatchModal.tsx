@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, MapPin, Clock, Star, Phone, CheckCircle, Loader2, Languages, Calendar } from 'lucide-react';
+import { X, User, MapPin, Clock, Star, Phone, CheckCircle, Loader2, Languages, Calendar, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
@@ -39,6 +39,24 @@ export const WorkerMatchModal = ({
   const { toast } = useToast();
   const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
   const [isAssigning, setIsAssigning] = useState(false);
+  const [showCloseWarning, setShowCloseWarning] = useState(false);
+
+  // Handle close attempt - show warning if workers are available
+  const handleCloseAttempt = () => {
+    if (isLoading || isAssigning) return; // Don't allow close during loading/assigning
+    
+    if (matchedWorkers.length > 0) {
+      setShowCloseWarning(true);
+    } else {
+      // No workers available, allow close
+      onClose();
+    }
+  };
+
+  const handleConfirmClose = () => {
+    setShowCloseWarning(false);
+    onClose();
+  };
 
   const handleSelectWorker = async (worker: MatchedWorker) => {
     setSelectedWorkerId(worker.id);
@@ -108,12 +126,58 @@ export const WorkerMatchModal = ({
 
   return (
     <AnimatePresence>
+      {/* Close Warning Modal */}
+      {showCloseWarning && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-foreground/60 backdrop-blur-sm"
+          onClick={() => setShowCloseWarning(false)}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-card rounded-2xl p-6 max-w-sm w-full shadow-elevated"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-center mb-4">
+              <div className="w-12 h-12 bg-warning/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                <AlertCircle className="w-6 h-6 text-warning" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                Select a Worker First
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                You need to select a worker to proceed with your booking. Without a worker, your service cannot be started.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={handleConfirmClose}
+              >
+                Skip Anyway
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={() => setShowCloseWarning(false)}
+              >
+                Select Worker
+              </Button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-foreground/50 backdrop-blur-sm"
-        onClick={onClose}
+        onClick={handleCloseAttempt}
       >
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -137,8 +201,9 @@ export const WorkerMatchModal = ({
                 </p>
               </div>
               <button
-                onClick={onClose}
+                onClick={handleCloseAttempt}
                 className="p-2 rounded-full hover:bg-muted/80 transition-colors"
+                disabled={isLoading || isAssigning}
               >
                 <X className="w-5 h-5 text-muted-foreground" />
               </button>

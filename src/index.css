@@ -45,6 +45,9 @@
     --success: 150 60% 45%;
     --success-foreground: 0 0% 100%;
     
+    --warning: 38 92% 50%;
+    --warning-foreground: 20 30% 15%;
+    
     --whatsapp: 142 70% 45%;
     --whatsapp-foreground: 0 0% 100%;
 
@@ -93,6 +96,9 @@
 
     --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 100%;
+    
+    --warning: 38 85% 55%;
+    --warning-foreground: 20 30% 10%;
 
     --border: 20 20% 22%;
     --input: 20 20% 22%;

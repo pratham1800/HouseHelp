@@ -99,6 +99,14 @@ const timeSlots = [
   { id: 'flexible', label: 'Flexible', time: 'Any time' },
 ];
 
+// Time slots for lunch (no evening option)
+const lunchTimeSlots = [
+  { id: 'morning', label: 'Morning', time: '6 AM - 10 AM' },
+  { id: 'midday', label: 'Mid-Day', time: '10 AM - 2 PM' },
+  { id: 'afternoon', label: 'Afternoon', time: '2 PM - 6 PM' },
+  { id: 'flexible', label: 'Flexible', time: 'Any time' },
+];
+
 const MATCHING_FEE = 199;
 
 // Helper function to get minimum selectable date in local timezone (YYYY-MM-DD format)
@@ -274,7 +282,30 @@ export const RequirementForm = ({
     if (service.id === 'driver' && (hasSubService('full-time') || hasSubService('night-driver'))) {
       return false;
     }
+    // Hide preferred time for breakfast only (always morning)
+    if (service.id === 'cooking' && hasSubService('breakfast') && 
+        !hasSubService('lunch') && !hasSubService('dinner') && 
+        !hasSubService('two-meals') && !hasSubService('all-meals') && 
+        !hasSubService('special-cuisine')) {
+      return false;
+    }
     return true;
+  };
+
+  // Get appropriate time slots based on selected cooking sub-services
+  const getAvailableTimeSlots = () => {
+    if (service.id === 'cooking') {
+      // For lunch only (no dinner, no all-meals, no two-meals) - exclude evening
+      const hasLunch = hasSubService('lunch');
+      const hasDinner = hasSubService('dinner');
+      const hasTwoMeals = hasSubService('two-meals');
+      const hasAllMeals = hasSubService('all-meals');
+      
+      if (hasLunch && !hasDinner && !hasTwoMeals && !hasAllMeals) {
+        return lunchTimeSlots;
+      }
+    }
+    return timeSlots;
   };
 
   const getServiceIcon = () => {
@@ -334,9 +365,19 @@ export const RequirementForm = ({
 
       try {
         // For full-time driver, use 'flexible' as preferredTime if not set
-        const preferredTimeForMatching = shouldShowPreferredTime() 
-          ? formData.preferredTime 
-          : (service.id === 'driver' && hasSubService('full-time') ? 'flexible' : formData.preferredTime);
+        // For breakfast only cooking, use 'morning'
+        const getPreferredTimeForMatching = () => {
+          if (!shouldShowPreferredTime()) {
+            if (service.id === 'driver' && hasSubService('full-time')) {
+              return 'flexible';
+            }
+            if (service.id === 'cooking' && hasSubService('breakfast')) {
+              return 'morning';
+            }
+          }
+          return formData.preferredTime;
+        };
+        const preferredTimeForMatching = getPreferredTimeForMatching();
         
         const { data: matchData, error: matchError } = await supabase.functions.invoke('match-workers', {
           body: {
@@ -386,9 +427,19 @@ export const RequirementForm = ({
     try {
       // Build service-specific details
       // For full-time driver, set preferredTime to 'flexible' if not provided
-      const preferredTimeValue = shouldShowPreferredTime() 
-        ? formData.preferredTime 
-        : (service.id === 'driver' && hasSubService('full-time') ? 'flexible' : formData.preferredTime);
+      // For breakfast only cooking, set preferredTime to 'morning'
+      const getPreferredTimeValue = () => {
+        if (!shouldShowPreferredTime()) {
+          if (service.id === 'driver' && hasSubService('full-time')) {
+            return 'flexible';
+          }
+          if (service.id === 'cooking' && hasSubService('breakfast')) {
+            return 'morning';
+          }
+        }
+        return formData.preferredTime;
+      };
+      const preferredTimeValue = getPreferredTimeValue();
       
       const serviceDetails = {
         // Common
@@ -966,7 +1017,7 @@ export const RequirementForm = ({
                           Preferred Time Slot
                         </Label>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mb-4 sm:mb-6">
-                          {timeSlots.map((slot) => (
+                          {getAvailableTimeSlots().map((slot) => (
                             <button
                               key={slot.id}
                               onClick={() => handleInputChange('preferredTime', slot.id)}

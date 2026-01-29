@@ -24,6 +24,7 @@ import WorkerBookings from "./pages/WorkerBookings";
 import WorkerEarnings from "./pages/WorkerEarnings";
 import WorkerHowItWorks from "./pages/WorkerHowItWorks";
 import WorkerMyEmployers from "./pages/WorkerMyEmployers";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +40,7 @@ const App = () => (
             <Routes>
               {/* Public routes */}
               <Route path="/" element={<Index />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/services" element={<Services />} />
               <Route path="/services/:serviceId" element={<Services />} />
               

@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { ForgotPasswordModal } from '@/components/ForgotPasswordModal';
 import { z } from 'zod';
 
 const loginSchema = z.object({
@@ -32,6 +33,7 @@ export default function WorkerAuth() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -230,6 +232,15 @@ export default function WorkerAuth() {
                 {errors.password && (
                   <p className="text-destructive text-sm mt-1">{errors.password}</p>
                 )}
+                {mode === 'login' && (
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotPassword(true)}
+                    className="text-sm text-primary hover:underline font-medium"
+                  >
+                    Forgot password?
+                  </button>
+                )}
               </div>
 
               <Button type="submit" className="w-full" size="lg" disabled={loading}>
@@ -327,6 +338,13 @@ export default function WorkerAuth() {
           </div>
         </div>
       </motion.div>
+
+      {/* Forgot Password Modal */}
+      <ForgotPasswordModal
+        isOpen={showForgotPassword}
+        onClose={() => setShowForgotPassword(false)}
+        onBackToLogin={() => setShowForgotPassword(false)}
+      />
     </div>
   );
 }

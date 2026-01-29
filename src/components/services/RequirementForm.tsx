@@ -94,8 +94,7 @@ const gardenSizes = [
 const timeSlots = [
   { id: 'morning', label: 'Morning', time: '6 AM - 10 AM' },
   { id: 'midday', label: 'Mid-Day', time: '10 AM - 2 PM' },
-  { id: 'afternoon', label: 'Afternoon', time: '2 PM - 6 PM' },
-  { id: 'evening', label: 'Evening', time: '6 PM - 10 PM' },
+  { id: 'evening', label: 'Evening', time: '5 PM - 9 PM' },
   { id: 'flexible', label: 'Flexible', time: 'Any time' },
 ];
 
@@ -103,7 +102,6 @@ const timeSlots = [
 const lunchTimeSlots = [
   { id: 'morning', label: 'Morning', time: '6 AM - 10 AM' },
   { id: 'midday', label: 'Mid-Day', time: '10 AM - 2 PM' },
-  { id: 'afternoon', label: 'Afternoon', time: '2 PM - 6 PM' },
   { id: 'flexible', label: 'Flexible', time: 'Any time' },
 ];
 

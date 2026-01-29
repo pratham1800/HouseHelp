@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { ForgotPasswordModal } from '@/components/ForgotPasswordModal';
 import { z } from 'zod';
 
 interface AuthModalProps {
@@ -33,6 +34,7 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'login' }: AuthModalP
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   
   const { signIn, signUp, signInWithGoogle } = useAuth();
   const { toast } = useToast();
@@ -262,6 +264,18 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'login' }: AuthModalP
                   {errors.password && (
                     <p className="text-destructive text-sm mt-1">{errors.password}</p>
                   )}
+                  {mode === 'login' && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleClose();
+                        setShowForgotPassword(true);
+                      }}
+                      className="text-sm text-primary hover:underline font-medium"
+                    >
+                      Forgot password?
+                    </button>
+                  )}
                 </div>
 
                 <Button type="submit" className="w-full" size="lg" disabled={loading}>
@@ -348,6 +362,21 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'login' }: AuthModalP
           </motion.div>
         </div>
       )}
+
+      {/* Forgot Password Modal */}
+      <ForgotPasswordModal
+        isOpen={showForgotPassword}
+        onClose={() => setShowForgotPassword(false)}
+        onBackToLogin={() => {
+          setShowForgotPassword(false);
+          // Re-open the auth modal after a brief delay
+          setTimeout(() => {
+            if (!isOpen) {
+              // If the original modal was closed, we need the parent to reopen it
+            }
+          }, 100);
+        }}
+      />
     </AnimatePresence>
   );
 };

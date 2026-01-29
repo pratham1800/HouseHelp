@@ -648,19 +648,27 @@ const Dashboard = () => {
                               {booking.sub_services.length} service{booking.sub_services.length !== 1 ? 's' : ''} • {houseSizeLabels[booking.house_size] || booking.house_size}
                             </p>
                           </div>
-                          {(() => {
-                            const trialStatus = computeTrialStatus(booking.start_date, booking.status);
-                            const displayStatus = statusConfig[trialStatus.status] || statusConfig.pending;
-                            return (
-                              <Badge className={`${displayStatus.color} gap-1`}>
-                                {displayStatus.icon}
-                                <span>{displayStatus.label}</span>
-                                {trialStatus.daysRemaining !== undefined && (
-                                  <span className="ml-1">({trialStatus.daysRemaining}d left)</span>
-                                )}
+                          <div className="flex flex-col items-end gap-1">
+                            {(() => {
+                              const trialStatus = computeTrialStatus(booking.start_date, booking.status);
+                              const displayStatus = statusConfig[trialStatus.status] || statusConfig.pending;
+                              return (
+                                <Badge className={`${displayStatus.color} gap-1`}>
+                                  {displayStatus.icon}
+                                  <span>{displayStatus.label}</span>
+                                  {trialStatus.daysRemaining !== undefined && (
+                                    <span className="ml-1">({trialStatus.daysRemaining}d left)</span>
+                                  )}
+                                </Badge>
+                              );
+                            })()}
+                            {!booking.worker && booking.status !== 'cancelled' && (
+                              <Badge className="bg-warning/10 text-warning border-warning/20 gap-1">
+                                <AlertCircle className="w-3 h-3" />
+                                <span>No Worker</span>
                               </Badge>
-                            );
-                          })()}
+                            )}
+                          </div>
                         </div>
 
                         <div className="flex flex-wrap items-center gap-4 mt-3 text-sm">
@@ -693,8 +701,8 @@ const Dashboard = () => {
                           className="overflow-hidden"
                         >
                           <div className="pt-4 mt-4 border-t border-border space-y-4">
-                            {/* Assigned Worker */}
-                            {booking.worker && (
+                            {/* Assigned Worker or No Worker Warning */}
+                            {booking.worker ? (
                               <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
                                 <div className="flex items-center justify-between mb-3">
                                   <p className="text-sm font-medium text-foreground">Assigned Worker</p>
@@ -731,7 +739,7 @@ const Dashboard = () => {
                                     </p>
                                     {booking.avg_rating && (
                                       <div className="flex items-center gap-1 mt-1">
-                                        <span className="text-amber-500">★</span>
+                                        <span className="text-warning">★</span>
                                         <span className="text-sm font-medium">{booking.avg_rating.toFixed(1)}</span>
                                       </div>
                                     )}
@@ -742,6 +750,32 @@ const Dashboard = () => {
                                       <p className="text-sm font-medium text-primary">{booking.worker.phone}</p>
                                     </div>
                                   )}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="bg-warning/10 border border-warning/30 rounded-xl p-4">
+                                <div className="flex items-start gap-3">
+                                  <div className="w-10 h-10 bg-warning/20 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <AlertCircle className="w-5 h-5 text-warning" />
+                                  </div>
+                                  <div className="flex-1">
+                                    <p className="font-semibold text-foreground mb-1">No Worker Selected</p>
+                                    <p className="text-sm text-muted-foreground mb-3">
+                                      You need to select a worker to start your service. Please contact support or make a new booking.
+                                    </p>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="gap-2"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigate('/services');
+                                      }}
+                                    >
+                                      <Plus className="w-4 h-4" />
+                                      Book Again
+                                    </Button>
+                                  </div>
                                 </div>
                               </div>
                             )}

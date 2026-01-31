@@ -43,10 +43,10 @@ const dietaryPreferenceMap: Record<string, string> = {
   'veg': 'vegetarian',
   'egg': 'eggitarian',
   'nonveg': 'non_vegetarian',
-  'jain': 'vegetarian', // Jain maps to vegetarian as it's a subset
+  'jain': 'vegetarian',
 };
 
-// Map preferred time to working hours (matching the worker registration form values)
+// Map preferred time to working hours
 const timeToHours: Record<string, string[]> = {
   'morning': ['morning', 'full_day'],
   'midday': ['morning', 'full_day'],
@@ -55,14 +55,35 @@ const timeToHours: Record<string, string[]> = {
   'flexible': ['morning', 'evening', 'full_day'],
 };
 
-// Major cities for city-level matching
+// Major cities for location matching
 const majorCities = [
   'delhi', 'new delhi', 'mumbai', 'bangalore', 'bengaluru', 'chennai', 'kolkata',
   'hyderabad', 'pune', 'ahmedabad', 'jaipur', 'lucknow', 'noida', 'gurgaon',
   'gurugram', 'chandigarh', 'kochi', 'indore', 'nagpur', 'ghaziabad', 'faridabad',
+  // Uttarakhand cities
+  'dehradun', 'haridwar', 'rishikesh', 'roorkee', 'haldwani', 'nainital', 'mussoorie',
+  // UP cities
+  'agra', 'varanasi', 'kanpur', 'allahabad', 'prayagraj', 'meerut', 'mathura',
+  // Rajasthan cities  
+  'udaipur', 'jodhpur', 'ajmer', 'kota', 'bikaner',
+  // Gujarat cities
+  'surat', 'vadodara', 'rajkot', 'gandhinagar',
+  // MP cities
+  'bhopal', 'gwalior', 'jabalpur',
+  // Other major cities
+  'visakhapatnam', 'vijayawada', 'coimbatore', 'madurai', 'mysore', 'mangalore',
+  'bhubaneswar', 'patna', 'ranchi', 'raipur', 'thiruvananthapuram', 'kozhikode',
 ];
 
-// City aliases (map variations to canonical names)
+// State/region names for broader matching
+const stateRegions = [
+  'uttarakhand', 'delhi ncr', 'haryana', 'uttar pradesh', 'rajasthan', 'punjab',
+  'maharashtra', 'karnataka', 'tamil nadu', 'kerala', 'telangana', 'andhra pradesh',
+  'west bengal', 'gujarat', 'madhya pradesh', 'bihar', 'jharkhand', 'odisha',
+  'chhattisgarh', 'assam', 'himachal pradesh', 'jammu', 'kashmir', 'goa',
+];
+
+// City aliases
 const cityAliases: Record<string, string> = {
   'bengaluru': 'bangalore',
   'bangalore': 'bangalore',
@@ -70,11 +91,56 @@ const cityAliases: Record<string, string> = {
   'delhi': 'delhi',
   'gurugram': 'gurgaon',
   'gurgaon': 'gurgaon',
+  'prayagraj': 'allahabad',
 };
 
-// Common Indian city names and areas for location matching
+// Map cities to their states/regions
+const cityToRegion: Record<string, string> = {
+  'delhi': 'delhi ncr',
+  'noida': 'delhi ncr',
+  'gurgaon': 'delhi ncr',
+  'ghaziabad': 'delhi ncr',
+  'faridabad': 'delhi ncr',
+  'mumbai': 'maharashtra',
+  'pune': 'maharashtra',
+  'nagpur': 'maharashtra',
+  'bangalore': 'karnataka',
+  'mysore': 'karnataka',
+  'mangalore': 'karnataka',
+  'chennai': 'tamil nadu',
+  'coimbatore': 'tamil nadu',
+  'madurai': 'tamil nadu',
+  'hyderabad': 'telangana',
+  'kolkata': 'west bengal',
+  'ahmedabad': 'gujarat',
+  'surat': 'gujarat',
+  'vadodara': 'gujarat',
+  'jaipur': 'rajasthan',
+  'udaipur': 'rajasthan',
+  'jodhpur': 'rajasthan',
+  'lucknow': 'uttar pradesh',
+  'kanpur': 'uttar pradesh',
+  'varanasi': 'uttar pradesh',
+  'agra': 'uttar pradesh',
+  'dehradun': 'uttarakhand',
+  'haridwar': 'uttarakhand',
+  'rishikesh': 'uttarakhand',
+  'roorkee': 'uttarakhand',
+  'haldwani': 'uttarakhand',
+  'nainital': 'uttarakhand',
+  'chandigarh': 'punjab',
+  'kochi': 'kerala',
+  'thiruvananthapuram': 'kerala',
+  'bhopal': 'madhya pradesh',
+  'indore': 'madhya pradesh',
+  'patna': 'bihar',
+  'ranchi': 'jharkhand',
+  'bhubaneswar': 'odisha',
+  'raipur': 'chhattisgarh',
+};
+
+// Location keywords for area-level matching
 const locationKeywords = [
-  // Major cities
   ...majorCities,
   // Delhi NCR areas
   'dwarka', 'rohini', 'pitampura', 'janakpuri', 'lajpat nagar', 'saket',
@@ -87,37 +153,66 @@ const locationKeywords = [
   // Mumbai areas
   'andheri', 'bandra', 'juhu', 'powai', 'thane', 'navi mumbai', 'malad',
   'goregaon', 'borivali', 'kandivali', 'dadar', 'lower parel', 'worli',
+  // State regions
+  ...stateRegions,
 ];
 
-// Extract city from address string
+// Extract city from address
 function extractCityFromAddress(address: string): string | null {
   const normalizedAddress = address.toLowerCase().trim();
-  
   for (const city of majorCities) {
     if (normalizedAddress.includes(city)) {
       return cityAliases[city] || city;
     }
   }
+  return null;
+}
+
+// Extract state/region from address
+function extractRegionFromAddress(address: string): string | null {
+  const normalizedAddress = address.toLowerCase().trim();
+  
+  // Check if a state/region is mentioned directly
+  for (const region of stateRegions) {
+    if (normalizedAddress.includes(region)) {
+      return region;
+    }
+  }
+  
+  // If a city is found, get its region
+  const city = extractCityFromAddress(address);
+  if (city && cityToRegion[city]) {
+    return cityToRegion[city];
+  }
   
   return null;
 }
 
-// Extract city from worker's preferred_areas or residential_address
+// Extract city from worker's location
 function extractWorkerCity(worker: Worker): string | null {
-  // Check preferred_areas first
   if (worker.preferred_areas && worker.preferred_areas.length > 0) {
     for (const area of worker.preferred_areas) {
       const city = extractCityFromAddress(area);
       if (city) return city;
     }
   }
-  
-  // Check residential_address
   if (worker.residential_address) {
-    const city = extractCityFromAddress(worker.residential_address);
-    if (city) return city;
+    return extractCityFromAddress(worker.residential_address);
   }
-  
+  return null;
+}
+
+// Extract region from worker's location
+function extractWorkerRegion(worker: Worker): string | null {
+  if (worker.preferred_areas && worker.preferred_areas.length > 0) {
+    for (const area of worker.preferred_areas) {
+      const region = extractRegionFromAddress(area);
+      if (region) return region;
+    }
+  }
+  if (worker.residential_address) {
+    return extractRegionFromAddress(worker.residential_address);
+  }
   return null;
 }
 
@@ -125,77 +220,78 @@ function extractWorkerCity(worker: Worker): string | null {
 function extractLocations(address: string): string[] {
   const normalizedAddress = address.toLowerCase().trim();
   const matchedLocations: string[] = [];
-  
   for (const keyword of locationKeywords) {
     if (normalizedAddress.includes(keyword)) {
       matchedLocations.push(keyword);
     }
   }
-  
   return matchedLocations;
 }
 
-// Check if worker's location matches employer's location
-function workerMatchesLocation(worker: Worker, employerAddress: string): boolean {
+// STRICT location matching - returns match level
+function getLocationMatchLevel(worker: Worker, employerAddress: string): 'exact' | 'city' | 'region' | 'none' {
+  const employerCity = extractCityFromAddress(employerAddress);
+  const employerRegion = extractRegionFromAddress(employerAddress);
   const employerLocations = extractLocations(employerAddress);
   
-  // If we can't determine employer location, don't filter strictly (allow all)
-  if (employerLocations.length === 0) {
-    console.log(`No location keywords found in employer address: "${employerAddress}"`);
-    return true;
+  const workerCity = extractWorkerCity(worker);
+  const workerRegion = extractWorkerRegion(worker);
+  
+  // Check for exact area/neighborhood match
+  if (employerLocations.length > 0) {
+    if (worker.preferred_areas && worker.preferred_areas.length > 0) {
+      const workerAreas = worker.preferred_areas.map(a => a.toLowerCase());
+      const hasAreaMatch = employerLocations.some(loc => 
+        workerAreas.some(area => area.includes(loc) || loc.includes(area))
+      );
+      if (hasAreaMatch) return 'exact';
+    }
+    
+    if (worker.residential_address) {
+      const workerLocations = extractLocations(worker.residential_address);
+      const hasResidentialMatch = employerLocations.some(loc => 
+        workerLocations.some(wLoc => wLoc.includes(loc) || loc.includes(wLoc))
+      );
+      if (hasResidentialMatch) return 'exact';
+    }
   }
   
-  // Check worker's preferred_areas
-  if (worker.preferred_areas && worker.preferred_areas.length > 0) {
-    const workerAreas = worker.preferred_areas.map(a => a.toLowerCase());
-    const hasAreaMatch = employerLocations.some(loc => 
-      workerAreas.some(area => area.includes(loc) || loc.includes(area))
-    );
-    if (hasAreaMatch) return true;
+  // Check city-level match
+  if (employerCity && workerCity && employerCity === workerCity) {
+    return 'city';
   }
   
-  // Check worker's residential_address
-  if (worker.residential_address) {
-    const workerLocations = extractLocations(worker.residential_address);
-    const hasResidentialMatch = employerLocations.some(loc => 
-      workerLocations.some(wLoc => wLoc.includes(loc) || loc.includes(wLoc))
-    );
-    if (hasResidentialMatch) return true;
+  // Check region/state-level match
+  if (employerRegion && workerRegion && employerRegion === workerRegion) {
+    return 'region';
   }
   
-  return false;
+  return 'none';
 }
 
-// Check if worker matches the required subcategories
+// Check subcategory match
 function workerMatchesSubcategories(
   worker: Worker,
   serviceType: string,
   subServices?: { id: string; name: string }[],
   dietaryPreference?: string
 ): boolean {
-  // If no subcategories required, worker passes
   if ((!subServices || subServices.length === 0) && !dietaryPreference) {
     return true;
   }
 
-  // If worker has no subcategories, they don't match specific requirements
   if (!worker.work_subcategories || worker.work_subcategories.length === 0) {
     return false;
   }
 
-  // For cooking service, check dietary preference
   if (serviceType === 'cooking' && dietaryPreference) {
     const requiredDietarySubcategory = dietaryPreferenceMap[dietaryPreference];
-    if (requiredDietarySubcategory) {
-      const hasDietaryMatch = worker.work_subcategories.includes(requiredDietarySubcategory);
-      if (!hasDietaryMatch) {
-        console.log(`Worker ${worker.name} doesn't match dietary preference: ${dietaryPreference} -> ${requiredDietarySubcategory}`);
-        return false;
-      }
+    if (requiredDietarySubcategory && !worker.work_subcategories.includes(requiredDietarySubcategory)) {
+      console.log(`Worker ${worker.name} doesn't match dietary preference: ${dietaryPreference}`);
+      return false;
     }
   }
 
-  // For cleaning service, check sub-services
   if (serviceType === 'cleaning' && subServices && subServices.length > 0) {
     const requiredSubcategoryIds = subServices.map(s => s.id);
     const hasAllSubcategories = requiredSubcategoryIds.every(
@@ -214,12 +310,11 @@ function calculateMatchScore(
   worker: Worker,
   serviceType: string,
   preferredTime: string,
-  address: string,
+  locationLevel: 'exact' | 'city' | 'region' | 'none',
   subServices?: { id: string; name: string }[],
   dietaryPreference?: string
 ): number {
   let score = 0;
-  const maxScore = 100;
 
   // 1. Service Type Match (25 points)
   const requiredWorkType = serviceToWorkType[serviceType];
@@ -241,40 +336,26 @@ function calculateMatchScore(
       ).length;
       score += Math.round((matchedCount / requiredSubcategoryIds.length) * 25);
     } else {
-      score += 15; // Partial points if no specific subcategories required
+      score += 15;
     }
   }
 
-  // 3. Location Match (30 points) - Higher priority for nearby workers
-  const employerLocations = extractLocations(address);
-  if (employerLocations.length > 0) {
-    let locationScore = 0;
-    
-    // Check preferred_areas (25 points for area match)
-    if (worker.preferred_areas && worker.preferred_areas.length > 0) {
-      const workerAreas = worker.preferred_areas.map(a => a.toLowerCase());
-      const hasAreaMatch = employerLocations.some(loc => 
-        workerAreas.some(area => area.includes(loc) || loc.includes(area))
-      );
-      if (hasAreaMatch) locationScore = 30;
-    }
-    
-    // Check residential_address (20 points for residential match if no area match)
-    if (locationScore < 30 && worker.residential_address) {
-      const workerLocations = extractLocations(worker.residential_address);
-      const hasResidentialMatch = employerLocations.some(loc => 
-        workerLocations.some(wLoc => wLoc.includes(loc) || loc.includes(wLoc))
-      );
-      if (hasResidentialMatch) locationScore = 25;
-    }
-    
-    score += locationScore;
-  } else {
-    // No location info from employer, give partial score
-    score += 10;
+  // 3. Location Match (30 points) - based on match level
+  switch (locationLevel) {
+    case 'exact':
+      score += 30;
+      break;
+    case 'city':
+      score += 25;
+      break;
+    case 'region':
+      score += 15;
+      break;
+    default:
+      score += 0;
   }
 
-  // 4. Availability/Working Hours Match (10 points)
+  // 4. Working Hours Match (10 points)
   const acceptableHours = timeToHours[preferredTime] || timeToHours['flexible'];
   if (worker.working_hours && acceptableHours.includes(worker.working_hours)) {
     score += 10;
@@ -293,11 +374,10 @@ function calculateMatchScore(
     }
   }
 
-  return Math.min(score, maxScore);
+  return Math.min(score, 100);
 }
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -316,10 +396,28 @@ Deno.serve(async (req) => {
     console.log('Address:', address);
     console.log('Sub-services:', JSON.stringify(subServices));
 
-    // Extract dietary preference from sub-services for cooking
+    // Extract employer location info
+    const employerCity = extractCityFromAddress(address);
+    const employerRegion = extractRegionFromAddress(address);
+    console.log('Employer city:', employerCity);
+    console.log('Employer region:', employerRegion);
+
+    // If we can't determine ANY location info, return empty - location is required for matching
+    if (!employerCity && !employerRegion) {
+      console.log('Cannot determine employer location - no matches possible');
+      return new Response(
+        JSON.stringify({
+          success: true,
+          matchedWorkers: [],
+          message: 'Unable to determine your location. Please provide a valid city or area in your address for worker matching.'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Extract dietary preference for cooking
     let dietaryPreference: string | undefined;
     if (serviceType === 'cooking') {
-      // Try to get dietary preference from booking details
       const { data: bookingData } = await supabase
         .from('bookings')
         .select('sub_services')
@@ -329,14 +427,11 @@ Deno.serve(async (req) => {
       if (bookingData?.sub_services) {
         const subServicesData = bookingData.sub_services as { serviceDetails?: { dietaryPreference?: string } };
         dietaryPreference = subServicesData.serviceDetails?.dietaryPreference;
-        console.log('Dietary preference from booking:', dietaryPreference);
+        console.log('Dietary preference:', dietaryPreference);
       }
     }
 
-    const extractedLocations = extractLocations(address);
-    console.log('Extracted locations from address:', extractedLocations);
-
-    // Get the required work type
+    // Get required work type
     const requiredWorkType = serviceToWorkType[serviceType];
     console.log('Required work type:', requiredWorkType);
 
@@ -366,7 +461,7 @@ Deno.serve(async (req) => {
       );
     }
 
-// First filter by subcategory (strict requirement)
+    // Filter by subcategory first
     const subcategoryMatchedWorkers = workers.filter(worker => {
       const subcategoryMatch = workerMatchesSubcategories(worker, serviceType, subServices, dietaryPreference);
       if (!subcategoryMatch) {
@@ -389,61 +484,36 @@ Deno.serve(async (req) => {
       );
     }
 
-    // TIERED LOCATION MATCHING:
-    // Tier 1: Exact location match (neighborhood/area level)
-    // Tier 2: Same city match (fallback if no exact matches)
+    // STRICT LOCATION MATCHING - only workers in the same city/region
+    const locationMatchedWorkers: { worker: Worker; level: 'exact' | 'city' | 'region' }[] = [];
     
-    const exactLocationWorkers = subcategoryMatchedWorkers.filter(worker => 
-      workerMatchesLocation(worker, address)
-    );
-    
-    console.log(`Tier 1 (exact location): ${exactLocationWorkers.length} workers`);
-
-    let eligibleWorkers: Worker[];
-    
-    if (exactLocationWorkers.length > 0) {
-      // Use exact location matches
-      eligibleWorkers = exactLocationWorkers;
-      console.log('Using Tier 1: Exact location matches');
-    } else {
-      // Fallback to same city matches
-      const employerCity = extractCityFromAddress(address);
-      console.log(`No exact matches. Falling back to city-level matching. Employer city: ${employerCity}`);
-      
-      if (employerCity) {
-        const cityWorkers = subcategoryMatchedWorkers.filter(worker => {
-          const workerCity = extractWorkerCity(worker);
-          const cityMatch = workerCity === employerCity;
-          if (cityMatch) {
-            console.log(`Worker ${worker.name} matches city: ${workerCity}`);
-          }
-          return cityMatch;
-        });
-        
-        console.log(`Tier 2 (same city): ${cityWorkers.length} workers`);
-        eligibleWorkers = cityWorkers;
+    for (const worker of subcategoryMatchedWorkers) {
+      const matchLevel = getLocationMatchLevel(worker, address);
+      if (matchLevel !== 'none') {
+        locationMatchedWorkers.push({ worker, level: matchLevel });
+        console.log(`Worker ${worker.name} matched at ${matchLevel} level`);
       } else {
-        // If we can't determine city, return all subcategory-matched workers
-        console.log('Could not determine employer city, using all subcategory-matched workers');
-        eligibleWorkers = subcategoryMatchedWorkers;
+        console.log(`Worker ${worker.name} filtered out: No location match (employer: ${employerCity || employerRegion}, worker: ${extractWorkerCity(worker) || extractWorkerRegion(worker)})`);
       }
     }
 
-    if (eligibleWorkers.length === 0) {
+    console.log(`After location filtering: ${locationMatchedWorkers.length} workers`);
+
+    if (locationMatchedWorkers.length === 0) {
       return new Response(
         JSON.stringify({
           success: true,
           matchedWorkers: [],
-          message: 'No workers found in your area matching your service requirements'
+          message: `No workers found in ${employerCity || employerRegion}. We're expanding our network - please check back later.`
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Calculate match scores for eligible workers
-    const workersWithScores = eligibleWorkers.map(worker => ({
+    // Calculate scores and sort
+    const workersWithScores = locationMatchedWorkers.map(({ worker, level }) => ({
       ...worker,
-      match_score: calculateMatchScore(worker, serviceType, preferredTime, address, subServices, dietaryPreference),
+      match_score: calculateMatchScore(worker, serviceType, preferredTime, level, subServices, dietaryPreference),
     }));
 
     // Sort by match score and get top 5
@@ -464,7 +534,7 @@ Deno.serve(async (req) => {
         match_score: worker.match_score,
       }));
 
-    console.log(`Returning ${topWorkers.length} matched workers`);
+    console.log(`Returning ${topWorkers.length} matched workers from ${employerCity || employerRegion}`);
     console.log('Top workers:', topWorkers.map(w => ({
       name: w.name,
       subcategories: w.work_subcategories,
@@ -476,7 +546,7 @@ Deno.serve(async (req) => {
       JSON.stringify({
         success: true,
         matchedWorkers: topWorkers,
-        message: `Found ${topWorkers.length} matching workers`
+        message: `Found ${topWorkers.length} matching workers in ${employerCity || employerRegion}`
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

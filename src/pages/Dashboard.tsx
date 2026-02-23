@@ -374,7 +374,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="px-4 sm:px-8 lg:px-16 py-6 sm:py-12 lg:py-16 pt-28 sm:pt-32 pb-24 sm:pb-32">
+      <main className="px-4 sm:px-8 lg:px-16 py-6 sm:py-12 lg:py-16 pt-24 sm:pt-28 pb-24 sm:pb-32 mt-16">
         <div className="container-main">
           {/* Header */}
           <motion.div

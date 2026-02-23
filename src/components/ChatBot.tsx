@@ -203,7 +203,7 @@ export const ChatBot = () => {
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
             onClick={() => setIsOpen(true)}
-            className="fixed bottom-24 right-6 z-50 w-14 h-14 bg-gradient-to-br from-primary to-accent rounded-full shadow-elevated flex items-center justify-center hover:scale-110 transition-transform"
+            className="fixed bottom-20 right-6 z-50 w-14 h-14 bg-gradient-to-br from-primary to-accent rounded-full shadow-elevated flex items-center justify-center hover:scale-110 transition-transform"
           >
             <MessageCircle className="w-6 h-6 text-white" />
           </motion.button>
@@ -217,7 +217,7 @@ export const ChatBot = () => {
             initial={{ opacity: 0, y: 20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="fixed bottom-24 right-6 z-50 w-[360px] max-w-[calc(100vw-48px)] h-[500px] max-h-[calc(100vh-160px)] bg-card rounded-2xl shadow-elevated border border-border flex flex-col overflow-hidden"
+            className="fixed bottom-20 right-6 z-50 w-[360px] max-w-[calc(100vw-48px)] h-[500px] max-h-[calc(100vh-160px)] bg-card rounded-2xl shadow-elevated border border-border flex flex-col overflow-hidden"
           >
             {/* Header */}
             <div className={`flex items-center justify-between px-4 py-3 text-white ${
